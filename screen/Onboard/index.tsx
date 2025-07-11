@@ -22,7 +22,12 @@ import Animated, {
 } from "react-native-reanimated";
 import { useAppDispatch, useAppSelector } from "../../redux/hooks/hooks";
 import { setRoute } from "../../redux/slice/routes";
-import { murphyLaws } from "../../data/murphy";
+// Simple onboarding quotes
+const onboardingQuotes = [
+  "Welcome to Saturn - Your decentralized social space",
+  "Connect with friends across the ActivityPub network",
+  "Share your thoughts, photos, and videos"
+];
 import useGetMode from "../../hooks/GetMode";
 
 const height = Dimensions.get("window").height;
@@ -80,16 +85,16 @@ export default function Onboard() {
         decelerationRate={"fast"}
       >
         <OnboardBuilder
-          header="Welcome to QuickPost"
-          subText="Post to inspire"
+          header="Welcome to Saturn"
+          subText="Your decentralized social space"
           imageUri={require("../../assets/images/move.png")}
-          quote={murphyLaws[Number(firstPage)]}
+          quote={onboardingQuotes[Number(firstPage)]}
         />
         <OnboardBuilder
-          header={"Explore the \nnew world"}
-          subText="to your desire"
+          header={"Connect across \nthe fediverse"}
+          subText="Join the ActivityPub network"
           imageUri={require("../../assets/images/phone.png")}
-          quote={murphyLaws[Number(secondPage())]}
+          quote={onboardingQuotes[Number(secondPage())]}
         />
       </ScrollView>
       <View
