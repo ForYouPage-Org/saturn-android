@@ -1,5 +1,6 @@
 module.exports = {
   preset: 'react-native',
+  rootDir: '../',
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
   testEnvironment: 'node',
   transform: {

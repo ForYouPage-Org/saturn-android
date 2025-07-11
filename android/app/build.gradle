@@ -87,13 +87,13 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace 'org.foryoupage.saturn'
+    namespace "com.saturn"
     defaultConfig {
-        applicationId 'org.foryoupage.saturn'
+        applicationId "com.saturn"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
-        versionName "1.0b"
+        versionName "1.0"
     }
     signingConfigs {
         debug {
@@ -175,5 +175,3 @@ dependencies {
         implementation jscFlavor
     }
 }
-
-apply plugin: 'com.google.gms.google-services'
