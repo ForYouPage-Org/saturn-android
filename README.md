@@ -48,6 +48,7 @@ npm run android
 - `npm run clean` - Clean Android build cache
 - `npm run reset` - Reset cache and reinstall dependencies
 - `npm test` - Run tests with Jest
+- `npx expo start --android --clear` 
 
 ## Project Structure
 

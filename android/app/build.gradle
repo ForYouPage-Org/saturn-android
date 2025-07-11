@@ -87,13 +87,13 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace "org.foryoupage.saturn"
+    namespace 'org.foryoupage.saturn'
     defaultConfig {
-        applicationId "org.foryoupage.saturn"
+        applicationId 'org.foryoupage.saturn'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
-        versionName "1.0"
+        versionName "1.0b"
     }
     signingConfigs {
         debug {
@@ -106,8 +106,6 @@ android {
     buildTypes {
         debug {
             signingConfig signingConfigs.debug
-            debuggable true
-            jniDebuggable true
         }
         release {
             // Caution! In production, you need to generate your own keystore file.
