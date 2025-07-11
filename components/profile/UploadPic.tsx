@@ -1,15 +1,7 @@
 import { View, Text, Pressable } from "react-native";
 import React from "react";
 import { CameraIcon } from "../icons";
-let ImagePicker: any = null;
-try {
-  ImagePicker = require("react-native-image-crop-picker");
-} catch (error) {
-  ImagePicker = {
-    openPicker: () => Promise.reject(new Error("Not available on web")),
-    openCamera: () => Promise.reject(new Error("Not available on web"))
-  };
-}
+import * as ImagePicker from "expo-image-picker";
 import useGetMode from "../../hooks/GetMode";
 export default function PickImageButton({
   handleSetPhotoPost,
@@ -38,26 +30,18 @@ export default function PickImageButton({
       }}
     >
       <Pressable
-        onPress={() => {
-          ImagePicker.openPicker({
-            cropping: true,
-            cropperStatusBarColor: "#000000",
-            cropperToolbarColor: "#000000",
-            showCropGuidelines: false,
-            cropperTintColor: "red",
-            width: 500,
-            height: 500,
-            cropperActiveWidgetColor: "red",
-
-            cropperToolbarWidgetColor: "#FFFFFF",
-            cropperCancelText: "#FFFFFF",
-            cropperChooseColor: "#FFFFFF",
-            compressImageQuality: 0.3,
-          })
-            .then((image) => {
-              handleSetPhotoPost(image?.mime, image?.path, image?.size);
-            })
-            .catch((e) => {});
+        onPress={async () => {
+          const result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            allowsEditing: true,
+            aspect: [1, 1],
+            quality: 0.3,
+          });
+          
+          if (!result.canceled && result.assets[0]) {
+            const asset = result.assets[0];
+            handleSetPhotoPost(asset.mimeType || 'image/jpeg', asset.uri, asset.fileSize || 0);
+          }
         }}
         android_ripple={{ color: rippleColor, foreground: true }}
         style={{

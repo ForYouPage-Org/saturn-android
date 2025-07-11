@@ -17,7 +17,7 @@ interface loginResult {
 export const servicesApi = createApi({
   reducerPath: "servicesApi",
   baseQuery: fetchBaseQuery({
-    baseUrl: `${process.env.EXPO_PUBLIC_API_URL}/api/services`,
+    baseUrl: `${process.env.EXPO_PUBLIC_API_URL}/api`,
     prepareHeaders: (headers, { getState }) => {
       const token = (getState() as any).user.token;
       // If we have a token, set it in the header

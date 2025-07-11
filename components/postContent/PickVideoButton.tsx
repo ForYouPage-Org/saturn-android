@@ -1,28 +1,9 @@
 import { View, Text, Pressable } from "react-native";
 import React from "react";
 import { CameraIcon, VideoIcon } from "../icons";
-let ImagePicker: any = null;
-let launchImageLibrary: any = null;
-try {
-  const imagePickerModule = require("react-native-image-picker");
-  ImagePicker = imagePickerModule.default;
-  launchImageLibrary = imagePickerModule.launchImageLibrary;
-} catch (error) {
-  ImagePicker = {};
-  launchImageLibrary = (options: any, callback: any) => {
-    callback({ didCancel: true });
-  };
-}
+import * as ImagePicker from "expo-image-picker";
 import useGetMode from "../../hooks/GetMode";
-let Video: any = null;
-try {
-  const compressorModule = require("react-native-compressor");
-  Video = compressorModule.Video;
-} catch (error) {
-  Video = {
-    compress: (uri: string) => Promise.resolve(uri)
-  };
-}
+import { Video } from "react-native-compressor";
 export default function PickVideoButton({
   handleSetPhotoPost,
   setProgress,
@@ -51,21 +32,21 @@ export default function PickVideoButton({
       }}
     >
       <Pressable
-        onPress={() => {
+        onPress={async () => {
           setIsCompressing(true);
-          launchImageLibrary({ mediaType: "video" }, async (video) => {
-            setIsCompressing(false);
-            console.log(
-              "🚀 ~ file: PickVideoButton.tsx:37 ~ launchImageLibrary ~ video:",
-              video
-            );
-
-            if (video.assets && video.assets.length > 0) {
-              const result = await Video.compress(
-                video?.assets[0].uri as string,
+          const result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.Videos,
+            allowsEditing: true,
+            quality: 0.7,
+          });
+          
+          if (!result.canceled && result.assets[0]) {
+            const asset = result.assets[0];
+            try {
+              const compressedUri = await Video.compress(
+                asset.uri,
                 {
                   progressDivider: 10,
-
                   downloadProgress: (progress) => {
                     console.log("Download Progress: ", progress);
                   },
@@ -75,28 +56,22 @@ export default function PickVideoButton({
                   setProgress(progress);
                 }
               );
-              console.log(
-                "🚀 ~ file: PickVideoButton.tsx:46 ~ launchImageLibrary ~ result:",
-                result
-              );
-
+              
               handleSetPhotoPost(
-                video?.assets[0]?.type as string,
-                result as string,
-                video?.assets[0].fileSize as number
+                asset.mimeType || 'video/mp4',
+                compressedUri,
+                asset.fileSize || 0
+              );
+            } catch (error) {
+              console.error("Video compression failed:", error);
+              handleSetPhotoPost(
+                asset.mimeType || 'video/mp4',
+                asset.uri,
+                asset.fileSize || 0
               );
             }
-          });
-          // ImagePicker.openPicker({
-
-          //   mediaType: "video",
-
-          // })
-          //   .then((video) => {
-
-          //     handleSetPhotoPost(video?.mime, video?.path, video?.size);
-          //   })
-          //   .catch((e) => {});
+          }
+          setIsCompressing(false);
         }}
         android_ripple={{ color: rippleColor, foreground: true }}
         style={{

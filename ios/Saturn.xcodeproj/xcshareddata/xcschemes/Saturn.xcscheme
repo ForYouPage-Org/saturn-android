@@ -15,9 +15,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
-               BuildableName = "Qui.app"
-               BlueprintName = "Qui"
-               ReferencedContainer = "container:Qui.xcodeproj">
+               BuildableName = "Saturn.app"
+               BlueprintName = "Saturn"
+               ReferencedContainer = "container:Saturn.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -33,9 +33,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "00E356ED1AD99517003FC87E"
-               BuildableName = "QuiTests.xctest"
-               BlueprintName = "QuiTests"
-               ReferencedContainer = "container:Qui.xcodeproj">
+               BuildableName = "SaturnTests.xctest"
+               BlueprintName = "SaturnTests"
+               ReferencedContainer = "container:Saturn.xcodeproj">
             </BuildableReference>
          </TestableReference>
       </Testables>
@@ -55,9 +55,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
-            BuildableName = "Qui.app"
-            BlueprintName = "Qui"
-            ReferencedContainer = "container:Qui.xcodeproj">
+            BuildableName = "Saturn.app"
+            BlueprintName = "Saturn"
+            ReferencedContainer = "container:Saturn.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </LaunchAction>
@@ -72,9 +72,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
-            BuildableName = "Qui.app"
-            BlueprintName = "Qui"
-            ReferencedContainer = "container:Qui.xcodeproj">
+            BuildableName = "Saturn.app"
+            BlueprintName = "Saturn"
+            ReferencedContainer = "container:Saturn.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>

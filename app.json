@@ -68,29 +68,10 @@
           }
         }
       ],
-      [
-        "expo-notifications",
-        {
-          "icon": "./assets/notification.png",
-          "color": "#ffffff"
-        }
-      ],
-      "react-native-compressor",
-      "react-native-edge-to-edge",
-      [
-        "expo-build-properties",
-        {
-          "ios": {
-            "newArchEnabled": false
-          },
-          "android": {
-            "newArchEnabled": false
-          }
-        }
-      ],
       "expo-video",
       "expo-font",
-      "expo-asset"
+      "expo-asset",
+      "expo-image-picker"
     ],
     "owner": "marx1108"
   }
