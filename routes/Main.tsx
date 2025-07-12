@@ -316,7 +316,7 @@ export default function Main() {
         <Stack.Screen
           name="Main"
           options={{ headerShown: false, title: "Home" }}
-          component={BottomTabNavigator}
+          component={SimplifiedBottomNav}
         />
         <Stack.Screen
           name="Profile"

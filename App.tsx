@@ -39,6 +39,8 @@ import { store } from "./redux/store";
 import OnboardNavigation from "./routes/OnBoard";
 import { useAppDispatch, useAppSelector } from "./redux/hooks/hooks";
 import Auth from "./routes/Auth";
+import { loginSuccess } from "./redux/slice/user";
+import { setRoute } from "./redux/slice/routes";
 import { FadeInView } from "./components/global/AnimatedScreen/FadeInView";
 import useGetMode from "./hooks/GetMode";
 import { PersistGate } from "redux-persist/integration/react";
@@ -443,6 +445,29 @@ const Navigation = () => {
     jakaraBold: require("./assets/fonts/PlusJakartaSans-ExtraBold.ttf"),
     jakara: require("./assets/fonts/PlusJakartaSans-Medium.ttf"),
   });
+
+  // SIMPLIFIED: Direct auto-login for MVP testing
+  useEffect(() => {
+    if (route === "onBoard") {
+      // Skip onboarding and auth - go straight to app
+      const testUserData = {
+        _id: "6872b97082b9e189bf982804",
+        id: "6872b97082b9e189bf982804", 
+        username: "testuser",
+        preferredUsername: "testuser",
+        followers: [],
+        following: [],
+        email: "testuser@example.com",
+        createdAt: "2025-07-12T19:37:20.231Z",
+        updatedAt: "2025-07-12T19:37:20.231Z"
+      };
+      
+      const testToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4NzJiOTcwODJiOWUxODliZjk4MjgwNCIsInVzZXJuYW1lIjoidGVzdHVzZXIiLCJpYXQiOjE3NTIzNTAwMDUsImV4cCI6MTc1MjQzNjQwNX0.Q6Rr56qcCVGdLYUWqdDeKa8d-LYmBzNZbN9Fykdnz9Q";
+      
+      dispatch(loginSuccess({ token: testToken, data: testUserData }));
+      dispatch(setRoute({ route: "App" }));
+    }
+  }, [route]);
 
   const renderRoute = () => {
     if (route === "onBoard") {

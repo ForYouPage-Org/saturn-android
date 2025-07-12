@@ -198,24 +198,234 @@ Most endpoints require authentication via JWT tokens:
 Authorization: Bearer <your_jwt_token>
 ```
 
-### Error Response Format
+### 🔧 **STANDARDIZED ERROR RESPONSE FORMAT**
+
+**All API errors now use a consistent format to prevent frontend integration issues:**
+
+```json
+{
+  "status": "error",
+  "type": "ERROR_TYPE",
+  "error": "Human-readable error message",
+  "details": {} // Optional: Additional context for validation errors
+}
+```
+
+### 📋 **Error Types & Status Codes**
+
+| Error Type     | HTTP Status | Description                    | Example Use Case                              |
+| -------------- | ----------- | ------------------------------ | --------------------------------------------- |
+| `VALIDATION`   | 400         | Request data validation failed | Invalid email format, missing required fields |
+| `UNAUTHORIZED` | 401         | Authentication required        | Missing or invalid JWT token                  |
+| `FORBIDDEN`    | 403         | Permission denied              | User lacks required permissions               |
+| `NOT_FOUND`    | 404         | Requested resource not found   | User/post doesn't exist                       |
+| `CONFLICT`     | 409         | Resource conflict              | Username already exists                       |
+| `RATE_LIMIT`   | 429         | Too many requests              | Rate limit exceeded                           |
+| `SERVER_ERROR` | 500         | Internal server error          | Database connection failed                    |
+
+### 🔍 **Error Response Examples**
+
+**Authentication Error:**
+
+```json
+{
+  "status": "error",
+  "type": "UNAUTHORIZED",
+  "error": "Invalid credentials"
+}
+```
+
+**Validation Error:**
 
 ```json
 {
   "status": "error",
   "type": "VALIDATION",
-  "error": "Error message",
-  "details": {}
+  "error": "Request body validation failed",
+  "details": {
+    "email": {
+      "_errors": ["Invalid email format"]
+    }
+  }
 }
 ```
 
-### Error Types
+**Rate Limit Error:**
 
-- `VALIDATION` - Request data validation failed
-- `NOT_FOUND` - Requested resource not found
-- `UNAUTHORIZED` - Authentication required
-- `FORBIDDEN` - Permission denied
-- `SERVER_ERROR` - Internal server error
+```json
+{
+  "status": "error",
+  "type": "RATE_LIMIT",
+  "error": "Too many authentication attempts, please try again later"
+}
+```
+
+### 🎯 **Frontend Integration Guide**
+
+**JavaScript Error Handling:**
+
+```javascript
+// ✅ CORRECT - Handle standardized error format
+try {
+  const response = await fetch("/api/auth/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username, password }),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    // Always use data.error for user-facing messages
+    throw new Error(data.error || "Unknown error");
+  }
+
+  return data;
+} catch (error) {
+  // Show error.message to user
+  showToast(error.message);
+}
+
+// ❌ INCORRECT - Don't pass whole object to toast
+showToast(data); // This causes "[object Object]" display
+```
+
+### 🚀 **Rate Limiting - Environment Specific**
+
+**Development/Testing (Very Permissive):**
+
+- General API: 10,000 requests per minute
+- Authentication: 1,000 attempts per minute
+- Posts: 1,000 posts per minute
+- Media uploads: 500 uploads per minute
+
+**Production (Secure):**
+
+- General API: 100 requests per 15 minutes
+- Authentication: 10 attempts per 15 minutes
+- Posts: 20 posts per 5 minutes
+- Media uploads: 50 uploads per hour
+
+Rate limit headers are included in all responses:
+
+- `RateLimit-Policy: limit;window=duration`
+- `RateLimit-Limit: current_limit`
+- `RateLimit-Remaining: remaining_requests`
+- `RateLimit-Reset: reset_time`
+
+### 📊 **Field Specifications & Data Types**
+
+#### **Actor/User Object**
+
+```typescript
+interface Actor {
+  _id: string; // MongoDB ObjectId
+  id: string; // Same as _id
+  username: string; // 3-30 chars, alphanumeric + underscore
+  preferredUsername: string; // Display name
+  email?: string; // Valid email format (private field)
+  followers: string[]; // Array of user IDs
+  following: string[]; // Array of user IDs
+  createdAt: string; // ISO 8601 timestamp
+  updatedAt: string; // ISO 8601 timestamp
+}
+```
+
+#### **Post Object**
+
+```typescript
+interface Post {
+  id: string; // Full URL: https://domain.com/posts/uuid
+  content: string; // 1-5000 characters
+  author: {
+    // Author info (not "actor")
+    id: string;
+    username: string;
+    preferredUsername: string;
+  };
+  published: string; // ISO 8601 timestamp (not "createdAt")
+  sensitive: boolean; // Content warning flag
+  summary?: string; // Content warning text
+  attachments: Attachment[]; // Media attachments
+  likes: number; // Like count
+  likedByUser: boolean; // Current user's like status (not "isLiked")
+  shares: number; // Share count
+  sharedByUser: boolean; // Current user's share status
+  replyCount: number; // Comment count (not "commentsCount")
+  visibility: "public" | "followers" | "unlisted" | "direct";
+  url: string; // Full URL to post
+}
+```
+
+#### **Attachment Object**
+
+```typescript
+interface Attachment {
+  id: string; // Attachment ID
+  type: "image" | "video" | "audio" | "document";
+  url: string; // Full URL to media
+  name: string; // Original filename
+  size: number; // File size in bytes
+  mediaType: string; // MIME type
+  width?: number; // For images/videos
+  height?: number; // For images/videos
+}
+```
+
+#### **Comment Object**
+
+```typescript
+interface Comment {
+  id: string; // Comment ID
+  content: string; // 1-1000 characters
+  author: {
+    // Author info
+    id: string;
+    username: string;
+    preferredUsername: string;
+  };
+  postId: string; // Parent post ID
+  published: string; // ISO 8601 timestamp
+  inReplyTo?: string; // Parent comment ID (for nested comments)
+}
+```
+
+#### **Notification Object**
+
+```typescript
+interface Notification {
+  id: string; // Notification ID
+  type: "LIKE" | "COMMENT" | "FOLLOW" | "MENTION" | "SHARE";
+  read: boolean; // Read status
+  createdAt: string; // ISO 8601 timestamp
+  actor: {
+    // Who performed the action
+    id: string;
+    username: string;
+    preferredUsername: string;
+  };
+  object?: {
+    // The object being acted upon
+    id: string;
+    type: "Post" | "Comment" | "User";
+    content?: string; // Preview text
+  };
+}
+```
+
+### 🔐 **Authentication Headers**
+
+All protected endpoints require:
+
+```http
+Authorization: Bearer <jwt_token>
+```
+
+**JWT Token Format:**
+
+- **Algorithm**: HS256
+- **Expiration**: 24 hours
+- **Payload**: `{ id: string, username: string, iat: number, exp: number }`
 
 ---
 
@@ -231,9 +441,9 @@ POST /api/auth/register
 
 ```json
 {
-  "username": "johndoe",
-  "email": "john@example.com",
-  "password": "securePassword123"
+  "username": "johndoe", // Required: string, 3-30 chars, alphanumeric + underscore
+  "email": "john@example.com", // Required: string, valid email format
+  "password": "securePassword123" // Required: string, min 8 chars, must contain uppercase, lowercase, number
 }
 ```
 
@@ -241,9 +451,39 @@ POST /api/auth/register
 
 ```json
 {
-  "id": "user123",
-  "username": "johndoe",
-  "token": "jwt_token_here"
+  "actor": {
+    "_id": "6872b97082b9e189bf982804",
+    "id": "6872b97082b9e189bf982804",
+    "username": "johndoe",
+    "preferredUsername": "johndoe",
+    "followers": [],
+    "following": [],
+    "email": "john@example.com",
+    "createdAt": "2025-07-12T19:37:20.231Z",
+    "updatedAt": "2025-07-12T19:37:20.231Z"
+  },
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." // JWT token, expires in 24h
+}
+```
+
+**Validation Errors (400):**
+
+```json
+{
+  "status": "error",
+  "type": "VALIDATION",
+  "error": "Request body validation failed",
+  "details": {
+    "username": {
+      "_errors": ["Username must be between 3 and 30 characters"]
+    },
+    "email": {
+      "_errors": ["Invalid email format"]
+    },
+    "password": {
+      "_errors": ["Password must be at least 8 characters long"]
+    }
+  }
 }
 ```
 
@@ -257,8 +497,8 @@ POST /api/auth/login
 
 ```json
 {
-  "username": "johndoe",
-  "password": "securePassword123"
+  "username": "johndoe", // Required: string, username or email
+  "password": "securePassword123" // Required: string
 }
 ```
 
@@ -266,11 +506,28 @@ POST /api/auth/login
 
 ```json
 {
-  "user": {
-    "id": "user123",
-    "username": "johndoe"
+  "actor": {
+    "_id": "6872b97082b9e189bf982804",
+    "id": "6872b97082b9e189bf982804",
+    "username": "johndoe",
+    "preferredUsername": "johndoe",
+    "followers": [],
+    "following": [],
+    "email": "john@example.com",
+    "createdAt": "2025-07-12T19:37:20.231Z",
+    "updatedAt": "2025-07-12T19:37:20.231Z"
   },
-  "token": "jwt_token_here"
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." // JWT token, expires in 24h
+}
+```
+
+**Authentication Errors (401):**
+
+```json
+{
+  "status": "error",
+  "type": "UNAUTHORIZED",
+  "error": "Invalid credentials"
 }
 ```
 
@@ -373,27 +630,35 @@ GET /api/posts?page=1&limit=10
 {
   "posts": [
     {
-      "id": "post123",
+      "id": "https://saturn.foryoupage.org/posts/d6d5ecc2-a589-43c8-aba6-ef2bfbb14f7c",
       "content": "Post content",
-      "createdAt": "2023-01-01T00:00:00.000Z",
-      "actor": {
-        "id": "actor123",
+      "author": {
+        // Note: "author" not "actor"
+        "id": "6872b97082b9e189bf982804",
         "username": "johndoe",
         "preferredUsername": "John Doe"
       },
+      "published": "2025-07-12T19:38:03.548Z", // Note: "published" not "createdAt"
+      "sensitive": false,
+      "summary": null,
+      "attachments": [],
       "likes": 5,
-      "commentsCount": 2,
-      "isLiked": true
+      "likedByUser": true, // Note: "likedByUser" not "isLiked"
+      "shares": 0,
+      "sharedByUser": false,
+      "replyCount": 2, // Note: "replyCount" not "commentsCount"
+      "visibility": "public",
+      "url": "https://saturn.foryoupage.org/posts/d6d5ecc2-a589-43c8-aba6-ef2bfbb14f7c"
     }
   ],
-  "pagination": {
-    "page": 1,
-    "limit": 10,
-    "totalPages": 5,
-    "totalItems": 48
-  }
+  "hasMore": false // Note: "hasMore" instead of pagination object
 }
 ```
+
+**Query Parameters:**
+
+- `page`: number (optional, default: 1)
+- `limit`: number (optional, default: 10, max: 50)
 
 ### Create Post
 
@@ -407,8 +672,11 @@ POST /api/posts
 
 ```json
 {
-  "content": "New post content",
-  "attachments": []
+  "content": "New post content", // Required: string, 1-5000 characters
+  "attachments": [], // Optional: array of attachment objects
+  "sensitive": false, // Optional: boolean, default false
+  "summary": null, // Optional: string, content warning
+  "visibility": "public" // Optional: "public"|"followers"|"unlisted"|"direct"
 }
 ```
 
@@ -416,13 +684,24 @@ POST /api/posts
 
 ```json
 {
-  "id": "post123",
+  "id": "https://saturn.foryoupage.org/posts/d6d5ecc2-a589-43c8-aba6-ef2bfbb14f7c",
   "content": "New post content",
-  "createdAt": "2023-01-01T00:00:00.000Z",
-  "actor": {
-    "id": "actor123",
-    "username": "johndoe"
-  }
+  "author": {
+    "id": "6872b97082b9e189bf982804",
+    "username": "johndoe",
+    "preferredUsername": "johndoe"
+  },
+  "published": "2025-07-12T19:38:03.548Z",
+  "sensitive": false,
+  "summary": null,
+  "attachments": [],
+  "likes": 0,
+  "likedByUser": false,
+  "shares": 0,
+  "sharedByUser": false,
+  "replyCount": 0,
+  "visibility": "public",
+  "url": "https://saturn.foryoupage.org/posts/d6d5ecc2-a589-43c8-aba6-ef2bfbb14f7c"
 }
 ```
 
@@ -611,10 +890,10 @@ We have created several test accounts for comprehensive API testing:
 
 | Username         | Email                  | Password              | Purpose                 | JWT Token (Valid 24h)                                                                                                                                                                                              |
 | ---------------- | ---------------------- | --------------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `testuser`       | `testuser@example.com` | `SecurePassword123!`  | General testing         | `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4NzJiOTcwODJiOWUxODliZjk4MjgwNCIsInVzZXJuYW1lIjoidGVzdHVzZXIiLCJpYXQiOjE3NTIzNDkyMTUsImV4cCI6MTc1MjQzNTYxNX0.jw5Hr85-hEMXaIXdClwpJ-F5ifZLm5xJGBVuzN6k_vk`         |
-| `adminuser`      | `admin@example.com`    | `AdminPassword123!`   | Admin functionality     | `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4NzJiOTc3ODJiOWUxODliZjk4MjgwNSIsInVzZXJuYW1lIjoiYWRtaW51c2VyIiwiaWF0IjoxNzUyMzQ5MDQ3LCJleHAiOjE3NTI0MzU0NDd9.354nYa15gc4cbEx2VvjwX_xVpuibmT3qQjZz1_UKkII`        |
-| `contentcreator` | `creator@example.com`  | `CreatorPassword123!` | Content & media testing | `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4NzJiOTdmODJiOWUxODliZjk4MjgwNiIsInVzZXJuYW1lIjoiY29udGVudGNyZWF0b3IiLCJpYXQiOjE3NTIzNDkwNTUsImV4cCI6MTc1MjQzNTQ1NX0.4LMirX2sutzmOvbgsoVo5hPPDHkSLUlgOyylbVE6qZ4` |
-| `socialuser`     | `social@example.com`   | `SocialPassword123!`  | Social interactions     | `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4NzJiYTE5ODJiOWUxODliZjk4MjgwOSIsInVzZXJuYW1lIjoic29jaWFsdXNlciIsImlhdCI6MTc1MjM0OTIwOSwiZXhwIjoxNzUyNDM1NjA5fQ.87Qi7G2_Pwi5FS3lKceyToLatUpQyMx2noaQkdZX-QM`      |
+| `testuser`       | `testuser@example.com` | `SecurePassword123!`  | General testing         | `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4NzJiOTcwODJiOWUxODliZjk4MjgwNCIsInVzZXJuYW1lIjoidGVzdHVzZXIiLCJpYXQiOjE3NTIzNTAwMDUsImV4cCI6MTc1MjQzNjQwNX0.Q6Rr56qcCVGdLYUWqdDeKa8d-LYmBzNZbN9Fykdnz9Q`         |
+| `adminuser`      | `admin@example.com`    | `AdminPassword123!`   | Admin functionality     | `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4NzJiOTc3ODJiOWUxODliZjk4MjgwNSIsInVzZXJuYW1lIjoiYWRtaW51c2VyIiwiaWF0IjoxNzUyMzUwMDEzLCJleHAiOjE3NTI0MzY0MTN9.IGD1EzGrk77dpHKp4V5FWgBO2iUyXmY3RKpl2eO9atA`        |
+| `contentcreator` | `creator@example.com`  | `CreatorPassword123!` | Content & media testing | `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4NzJiOTdmODJiOWUxODliZjk4MjgwNiIsInVzZXJuYW1lIjoiY29udGVudGNyZWF0b3IiLCJpYXQiOjE3NTIzNTAwMjEsImV4cCI6MTc1MjQzNjQyMX0.FlZ05y6sBookbVTlIr5cNFPphtzbLO9E3xUHGYe36NI` |
+| `socialuser`     | `social@example.com`   | `SocialPassword123!`  | Social interactions     | `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4NzJiYTE5ODJiOWUxODliZjk4MjgwOSIsInVzZXJuYW1lIjoic29jaWFsdXNlciIsImlhdCI6MTc1MjM1MDAyNywiZXhwIjoxNzUyNDM2NDI3fQ.29wVxMc0iaUzgA7QrgRUoH_Xn3eCumPY8FjrqdTMHk4`      |
 
 **Note:** Tokens expire after 24 hours. Use the login endpoint to get fresh tokens.
 
@@ -677,7 +956,9 @@ curl https://saturn.foryoupage.org/users/testuser \
 ```
 
 **Rate Limiting:**
-The API implements rate limiting (100 requests per 15 minutes). If you encounter rate limit errors, wait a few minutes before retrying.
+The API implements environment-specific rate limiting. See the comprehensive rate limiting section above for details.
+
+**✅ Updated**: The production server now uses the improved rate limiting system with much more permissive limits for development/testing!
 
 #### Testing Scenarios
 
@@ -1540,6 +1821,175 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Issues:** [GitHub Issues](https://github.com/marx1108/saturn/issues)
 - **Discussions:** [GitHub Discussions](https://github.com/marx1108/saturn-api/discussions)
 - **Security:** security@saturn-project.com
+
+---
+
+## 🚨 **Frontend Integration Troubleshooting Guide**
+
+### **Common Issues & Solutions**
+
+#### **1. "[object Object]" Error Display**
+
+**Problem:** Error messages showing "[object Object]" instead of readable text.
+
+**Root Cause:** Passing entire error response object to toast/alert instead of the error message.
+
+**Solution:**
+
+```javascript
+// ❌ WRONG
+const response = await fetch('/api/auth/login', { ... });
+const data = await response.json();
+showToast(data); // This shows "[object Object]"
+
+// ✅ CORRECT
+const response = await fetch('/api/auth/login', { ... });
+const data = await response.json();
+if (!response.ok) {
+  showToast(data.error); // This shows the actual error message
+}
+```
+
+#### **2. Rate Limit During Development**
+
+**Problem:** Getting rate limited while testing (HTTP 429).
+
+**Current Status:** Production server uses restrictive limits (10 auth attempts per 15 minutes).
+
+**Solutions:**
+
+- **Wait 15 minutes** between auth attempts
+- **Use existing test tokens** from the documentation
+- **Test non-auth endpoints** which have higher limits
+- **After next deployment:** Development will have 1000 attempts per minute
+
+#### **3. Unexpected Field Names**
+
+**Problem:** Frontend expecting `actor` but API returns `author`.
+
+**Key Differences:**
+
+- Posts use `author` (not `actor`)
+- Posts use `published` (not `createdAt`)
+- Posts use `likedByUser` (not `isLiked`)
+- Posts use `replyCount` (not `commentsCount`)
+- Feed uses `hasMore` (not pagination object)
+
+**Solution:** Update frontend to use correct field names (see Field Specifications section).
+
+#### **4. Token Expiration**
+
+**Problem:** Tokens expire after 24 hours.
+
+**Solution:**
+
+```javascript
+// Check token expiration
+const token = localStorage.getItem("token");
+const payload = JSON.parse(atob(token.split(".")[1]));
+const isExpired = payload.exp * 1000 < Date.now();
+
+if (isExpired) {
+  // Redirect to login
+  window.location.href = "/login";
+}
+```
+
+#### **5. CORS Issues**
+
+**Problem:** CORS errors in browser console.
+
+**Solution:** The API includes `Access-Control-Allow-Origin: *` for development. If issues persist, check:
+
+- Request headers are correct
+- Content-Type is `application/json`
+- Authorization header format: `Bearer <token>`
+
+### **Best Practices for Frontend Teams**
+
+#### **Error Handling**
+
+```javascript
+const handleApiCall = async (url, options) => {
+  try {
+    const response = await fetch(url, options);
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || `HTTP ${response.status}`);
+    }
+
+    return data;
+  } catch (error) {
+    console.error("API Error:", error);
+    showToast(error.message);
+    throw error;
+  }
+};
+```
+
+#### **Token Management**
+
+```javascript
+const getAuthHeader = () => {
+  const token = localStorage.getItem("token");
+  return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
+const apiCall = (url, options = {}) => {
+  return fetch(url, {
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...getAuthHeader(),
+      ...options.headers,
+    },
+  });
+};
+```
+
+#### **Type Safety**
+
+```typescript
+// Use the provided TypeScript interfaces
+interface ApiResponse<T> {
+  data?: T;
+  status?: "success" | "error";
+  error?: string;
+  type?: string;
+}
+
+const login = async (
+  credentials: LoginCredentials
+): Promise<{ actor: Actor; token: string }> => {
+  const response = await fetch("/api/auth/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(credentials),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.error || "Login failed");
+  }
+
+  return data;
+};
+```
+
+### **Quick Reference for Frontend Teams**
+
+| Field           | API Response                                            | Frontend Display        |
+| --------------- | ------------------------------------------------------- | ----------------------- |
+| User ID         | `actor.id` or `author.id`                               | User profile link       |
+| Username        | `actor.username` or `author.username`                   | @username               |
+| Display Name    | `actor.preferredUsername` or `author.preferredUsername` | Display name            |
+| Post Time       | `published`                                             | Format as "2 hours ago" |
+| Like Status     | `likedByUser`                                           | Heart icon state        |
+| Like Count      | `likes`                                                 | "5 likes"               |
+| Comment Count   | `replyCount`                                            | "3 comments"            |
+| Content Warning | `sensitive` + `summary`                                 | Show/hide content       |
 
 ---
 
