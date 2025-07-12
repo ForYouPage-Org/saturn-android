@@ -350,14 +350,7 @@ export default function Main() {
     };
   }, []);
 
-  // Return loading state if authentication is being verified - AFTER all hooks
-  if (!userState.token || !userState.data) {
-    return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        <Text>Checking authentication...</Text>
-      </View>
-    );
-  }
+  // 🔒 SECURITY: Authentication check removed - handled by App.tsx architecture
 
   // 🚫 MVP: Disable background processing
   if (isFeatureEnabled("BACKGROUND_PROCESSING")) {
