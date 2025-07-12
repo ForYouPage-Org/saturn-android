@@ -360,7 +360,7 @@ export default function Main() {
         <Stack.Screen
           name="Main"
           options={{ headerShown: false, title: "Home" }}
-          component={SimplifiedBottomNav}
+          component={BottomTabNavigator}
         />
         <Stack.Screen
           name="Profile"
