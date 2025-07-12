@@ -1,7 +1,12 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { IUSerData } from "../../types/api";
 
-interface loginResult {
+interface LoginResult {
+  actor: IUSerData;
+  token: string;
+}
+
+interface LegacyLoginResult {
   msg: string;
   token: string;
   data: IUSerData;
@@ -15,7 +20,7 @@ export const authApi = createApi({
   tagTypes: ["user"],
   endpoints: (builder) => ({
     login: builder.mutation<
-      loginResult,
+      LoginResult,
       {
         username: string;
         password: string;
@@ -32,12 +37,11 @@ export const authApi = createApi({
       extraOptions: { maxRetries: 0 },
     }),
     register: builder.mutation<
-      loginResult,
+      LoginResult,
       {
         username: string;
         password: string;
         email: string;
-        name: string;
       }
     >({
       query: (payload) => ({

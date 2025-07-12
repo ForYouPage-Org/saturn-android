@@ -8,10 +8,9 @@ import {
 } from "../../types/api";
 import storage from "../storage";
 
-interface loginResult {
-  msg: string;
+interface LoginResult {
+  actor: IUSerData;
   token: string;
-  data: IUSerData;
 }
 
 export const servicesApi = createApi({

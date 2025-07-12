@@ -117,7 +117,7 @@ export default function Login({ navigation }: LoginScreen) {
           console.log('[DIAGNOSTIC_ANDROID_LOGIN] Response data:', { hasToken: !!e.token, hasData: !!e.data, msg: e.msg });
           
           // Save login data to Redux
-          dispatch(loginSuccess({ token: e.token, data: e.data }));
+          dispatch(loginSuccess({ token: e.token, data: e.actor }));
           
           // Navigate to main app
           dispatch(setRoute({ route: "App" }));
@@ -144,8 +144,8 @@ export default function Login({ navigation }: LoginScreen) {
             return;
           }
           
-          // Fix: Safely access the error message
-          const errorMessage = e?.data?.msg || e?.data?.message || e?.data || e?.error || 'Login failed';
+          // Fix: Safely access the error message from new server format
+          const errorMessage = e?.data?.error || e?.data?.msg || e?.data?.message || 'Login failed';
           dispatch(openToast({ text: errorMessage, type: "Failed" }));
         })
         .finally(() => {

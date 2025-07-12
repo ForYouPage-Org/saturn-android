@@ -1,4 +1,23 @@
+export interface ApiErrorResponse {
+  status: "error";
+  type: "VALIDATION" | "UNAUTHORIZED" | "FORBIDDEN" | "NOT_FOUND" | "CONFLICT" | "RATE_LIMIT" | "SERVER_ERROR";
+  error: string;
+  details?: Record<string, any>;
+}
+
 export interface IUSerData {
+  _id: string;
+  id: string;
+  username: string;
+  preferredUsername: string;
+  email: string;
+  followers: string[];
+  following: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ILegacyUserData {
   name: string;
   userName: string;
   email: string;
@@ -45,7 +64,39 @@ export interface User {
   verified: boolean;
 }
 
+export interface Attachment {
+  id: string;
+  type: "image" | "video" | "audio" | "document";
+  url: string;
+  name: string;
+  size: number;
+  mediaType: string;
+  width?: number;
+  height?: number;
+}
+
 export interface IPost {
+  id: string;
+  content: string;
+  author: {
+    id: string;
+    username: string;
+    preferredUsername: string;
+  };
+  published: string;
+  sensitive: boolean;
+  summary?: string;
+  attachments: Attachment[];
+  likes: number;
+  likedByUser: boolean;
+  shares: number;
+  sharedByUser: boolean;
+  replyCount: number;
+  visibility: "public" | "followers" | "unlisted" | "direct";
+  url: string;
+}
+
+export interface ILegacyPost {
   id: string;
   _count: { like: number; comments: number; repostUser: number };
   userId: string;
@@ -58,7 +109,6 @@ export interface IPost {
     imageWidth?: number;
     title: string;
   } | null;
-
   audioUri: string | null;
   audioTitle: string | null;
   videoUri: string | null;
@@ -78,6 +128,19 @@ export interface IPost {
 }
 
 export interface IComment {
+  id: string;
+  content: string;
+  author: {
+    id: string;
+    username: string;
+    preferredUsername: string;
+  };
+  postId: string;
+  published: string;
+  inReplyTo?: string;
+}
+
+export interface ILegacyComment {
   id: string;
   comment: string;
   User: User;

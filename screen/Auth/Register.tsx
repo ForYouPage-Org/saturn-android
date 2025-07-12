@@ -105,8 +105,8 @@ export default function Register({ navigation }: RegisterScreen) {
             hasMessage: !!e?.data?.message,
             fullError: JSON.stringify(e)
           });
-          // Fix: Safely access the error message
-          const errorMessage = e?.data?.message || e?.data || 'Registration failed';
+          // Fix: Safely access the error message from new server format
+          const errorMessage = e?.data?.error || e?.data?.message || e?.data || 'Registration failed';
           dispatch(openToast({ type: "Failed", text: errorMessage }));
         });
     } catch (error) {
