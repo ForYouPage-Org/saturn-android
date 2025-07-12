@@ -30,7 +30,10 @@ import ContextMenu from "react-native-context-menu-view";
 import { IChatList } from "../../types/api";
 import { findChatById } from "../../util/chatSearch";
 
-import Animated, { useAnimatedKeyboard, useAnimatedStyle, } from "react-native-reanimated";
+import Animated, {
+  useAnimatedKeyboard,
+  useAnimatedStyle,
+} from "react-native-reanimated";
 import { ChatModal } from "../../components/messages/ChatList/ChatModal";
 import { Portal } from "react-native-paper";
 import { useNavigation, useNavigationState } from "@react-navigation/native";
@@ -44,6 +47,10 @@ import { ProfileIcon } from "../../components/icons";
 import { ArrElement } from "../../types/app";
 import ChatList from "../../components/messages/ChatList";
 import { IChatMessage } from "../../types/api";
+import {
+  isFeatureEnabled,
+  COMING_SOON_MESSAGE,
+} from "../../config/featureFlags";
 
 export default function ChatScreen({ navigation, route }: ChatScreenProp) {
   const user = useAppSelector((state) => state.user?.data);
@@ -64,10 +71,10 @@ export default function ChatScreen({ navigation, route }: ChatScreenProp) {
   const [sentSuccess, setSentSuccess] = useState(true);
   const [isTyping, setIstyping] = useState(false);
   const [getAllMessages] = useLazyGetAllMessagesQuery();
-  const keyboard = useAnimatedKeyboard({isStatusBarTranslucentAndroid:true});
+  const keyboard = useAnimatedKeyboard({ isStatusBarTranslucentAndroid: true });
   const animatedStyles = useAnimatedStyle(() => ({
     transform: [{ translateY: -keyboard.height.value }],
-    paddingTop:keyboard.height.value
+    paddingTop: keyboard.height.value,
   }));
 
   const renderItem = ({ item }: { item: IChatMessage }) => (
@@ -114,7 +121,12 @@ export default function ChatScreen({ navigation, route }: ChatScreenProp) {
 
   useMemo(() => {
     if (route.params?.chatId) {
-      socket?.emit("chat", route.params?.chatId);
+      // 🚫 MVP: Disable real-time chat
+      if (isFeatureEnabled("REAL_TIME_CHAT")) {
+        socket?.emit("chat", route.params?.chatId);
+      }
+
+      // Keep basic message loading for UI
       getAllMessages({ id: route.params?.chatId }).then((r) => {
         if (!r?.data?.chatList) {
           return;
@@ -130,7 +142,10 @@ export default function ChatScreen({ navigation, route }: ChatScreenProp) {
   }, [route.params?.chatId]);
 
   useMemo(() => {
-    findChatById(route.params.id || (route.params.chatId as string), chatState||[])
+    findChatById(
+      route.params.id || (route.params.chatId as string),
+      chatState || []
+    )
       .then((chat) => {
         if (chat) {
           setChats(chat);
@@ -142,17 +157,28 @@ export default function ChatScreen({ navigation, route }: ChatScreenProp) {
   }, [chatState]);
 
   useLayoutEffect(() => {
-    socket?.emit("chat", route.params.id);
+    // 🚫 MVP: Disable real-time chat
+    if (isFeatureEnabled("REAL_TIME_CHAT")) {
+      socket?.emit("chat", route.params.id);
+    }
   }, []);
   useMemo(() => {
-    socket?.emit(
-      "isTyping",
-      route.params.id || route.params.chatId,
-      messageText.length > 0 ? true : false
-    );
+    // 🚫 MVP: Disable real-time typing indicators
+    if (isFeatureEnabled("REAL_TIME_CHAT")) {
+      socket?.emit(
+        "isTyping",
+        route.params.id || route.params.chatId,
+        messageText.length > 0 ? true : false
+      );
+    }
   }, [messageText, route.params?.chatId]);
 
   useEffect(() => {
+    // 🚫 MVP: Disable real-time chat features
+    if (!isFeatureEnabled('REAL_TIME_CHAT')) {
+      return;
+    }
+    
     socket?.on("isTyping", (data: { isTyping: boolean; id: string }) => {
       if (data) {
         if (data.id !== user?.id) {
@@ -360,7 +386,7 @@ export default function ChatScreen({ navigation, route }: ChatScreenProp) {
         text={text}
         chatId={route.params.id}
       />
-      <Animated.View style={[{flex:1},animatedStyles]}>
+      <Animated.View style={[{ flex: 1 }, animatedStyles]}>
         <ChatListView
           isTyping={isTyping}
           messageText={messageText}

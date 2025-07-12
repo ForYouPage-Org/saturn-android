@@ -561,7 +561,7 @@ const Navigation = () => {
         <StatusBar
           animated={true}
           style={style}
-          backgroundColor="transparent"
+          // 🚫 MVP: Remove backgroundColor to fix edge-to-edge warnings
         />
         <View
           style={{ flex: 1, backgroundColor: dark ? "black" : "white" }}

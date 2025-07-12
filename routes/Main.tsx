@@ -41,6 +41,7 @@ import {
 } from "../redux/slice/chat/chatlist";
 import * as BackgroundFetch from "expo-background-fetch";
 import * as TaskManager from "expo-task-manager";
+// 🚫 MVP: Background processing imports kept for compatibility but disabled via feature flags
 import { AppState } from "react-native";
 
 import { updateOnlineIds } from "../redux/slice/chat/online";
@@ -48,6 +49,7 @@ import { openToast } from "../redux/slice/toast/toast";
 import { IMessageSocket } from "../types/socket";
 
 import useSocket from "../hooks/Socket";
+import { isFeatureEnabled } from "../config/featureFlags";
 
 import Notifications from "../util/notification";
 
@@ -60,16 +62,20 @@ import ChangeData from "../screen/App/ChangeData";
 import { createStackNavigator } from "@react-navigation/stack";
 const BACKGROUND_FETCH_TASK = "background-fetch";
 const Stack = createStackNavigator<RootStackParamList>();
-TaskManager.defineTask(BACKGROUND_FETCH_TASK, async () => {
-  const now = Date.now();
 
-  console.log(
-    `Got background fetch call at date: ${new Date(now).toISOString()}`
-  );
+// 🚫 MVP: Disable background processing
+if (isFeatureEnabled('BACKGROUND_PROCESSING')) {
+  TaskManager.defineTask(BACKGROUND_FETCH_TASK, async () => {
+    const now = Date.now();
 
-  // Be sure to return the successful result type!
-  return BackgroundFetch.BackgroundFetchResult.NewData;
-});
+    console.log(
+      `Got background fetch call at date: ${new Date(now).toISOString()}`
+    );
+
+    // Be sure to return the successful result type!
+    return BackgroundFetch.BackgroundFetchResult.NewData;
+  });
+}
 
 export default function Main() {
   const [updateNotificationId] = useUpdateNotificationIdMutation();
@@ -93,6 +99,13 @@ export default function Main() {
 
   useEffect(() => {
     console.log(process.env.EXPO_PUBLIC_PROJECT_ID);
+    
+    // 🚫 MVP: Disable push notifications
+    if (!isFeatureEnabled('PUSH_NOTIFICATIONS')) {
+      console.log('🚫 Push notifications disabled for MVP');
+      return;
+    }
+    
     async function registerForPushNotificationsAsync() {
       try {
         let token;
@@ -159,6 +172,11 @@ export default function Main() {
   }, []);
 
   useEffect(() => {
+    // 🚫 MVP: Disable Socket.io connections
+    if (!isFeatureEnabled('SOCKET_CONNECTIONS')) {
+      return;
+    }
+    
     socket?.on("connected", (connected) => {
       dispatch(openToast({ text: "Connected", type: "Success" }));
     });
@@ -168,6 +186,11 @@ export default function Main() {
   }, [socket]);
 
   useEffect(() => {
+    // 🚫 MVP: Disable Socket.io connections
+    if (!isFeatureEnabled('SOCKET_CONNECTIONS')) {
+      return;
+    }
+    
     socket?.emit("followedStatus");
     socket?.on("following", (following: number) => {
       if (following) dispatch(updateFollowing({ following }));
@@ -182,6 +205,11 @@ export default function Main() {
   }, [socket]);
 
   useEffect(() => {
+    // 🚫 MVP: Disable Socket.io connections
+    if (!isFeatureEnabled('SOCKET_CONNECTIONS')) {
+      return;
+    }
+    
     const rooms: string[] = [];
     for (let i in chatList) {
       rooms.push(chatList[i]?.id);
@@ -194,6 +222,11 @@ export default function Main() {
   }, [chatList]);
 
   useEffect(() => {
+    // 🚫 MVP: Disable Socket.io connections
+    if (!isFeatureEnabled('SOCKET_CONNECTIONS')) {
+      return;
+    }
+    
     if (socket) {
       socket?.on("newChat", (chatMessages) => {
         console.log(
@@ -220,6 +253,11 @@ export default function Main() {
   }, [socket]);
 
   useEffect(() => {
+    // 🚫 MVP: Disable Socket.io connections
+    if (!isFeatureEnabled('SOCKET_CONNECTIONS')) {
+      return;
+    }
+    
     socket?.on("online", (online) => {
       dispatch(updateOnlineIds({ ids: online }));
     });
@@ -264,7 +302,10 @@ export default function Main() {
         appState.current.match(/inactive|background/) &&
         nextAppState === "active"
       ) {
-        socket?.emit("online");
+        // 🚫 MVP: Disable Socket.io connections
+        if (isFeatureEnabled('SOCKET_CONNECTIONS')) {
+          socket?.emit("online");
+        }
         console.log("App has come to the foreground!");
       }
 
@@ -272,7 +313,10 @@ export default function Main() {
       setAppStateVisible(appState.current);
       console.log("AppState", appState.current);
       if (appState.current === "background") {
-        socket?.emit("away");
+        // 🚫 MVP: Disable Socket.io connections
+        if (isFeatureEnabled('SOCKET_CONNECTIONS')) {
+          socket?.emit("away");
+        }
       }
     });
     return () => {

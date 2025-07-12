@@ -53,6 +53,7 @@ import { Image } from "expo-image";
 import { AnimatedCircularProgress } from "react-native-circular-progress";
 
 import * as Progress from "react-native-progress";
+import { isFeatureEnabled } from "../../config/featureFlags";
 
 const width = Dimensions.get("window").width;
 export default function PostContent({ navigation }: PostContentProp) {
@@ -103,6 +104,12 @@ export default function PostContent({ navigation }: PostContentProp) {
     size: number,
     name: string
   ) {
+    // 🚫 MVP: Disable audio upload
+    if (!isFeatureEnabled('AUDIO_UPLOAD')) {
+      dispatch(openToast({ text: "Audio upload coming soon! 🎵", type: "Failed" }));
+      return;
+    }
+    
     setPostAudio({
       mimeType,
       uri,
@@ -180,6 +187,11 @@ export default function PostContent({ navigation }: PostContentProp) {
   }, []);
 
   useEffect(() => {
+    // 🚫 MVP: Disable audio animations
+    if (!isFeatureEnabled('AUDIO_UPLOAD')) {
+      return;
+    }
+    
     if (postAudio) {
       animationRef.current?.play();
     }
@@ -195,23 +207,23 @@ export default function PostContent({ navigation }: PostContentProp) {
     if (postPhoto || postAudio) {
       setDone(false);
       const formData = new FormData();
-      
+
       if (postPhoto) {
         const fileData = {
           uri: postPhoto.uri,
           type: postPhoto.mimeType,
-          name: `file.${postPhoto.mimeType.split('/')[1]}`,
+          name: `file.${postPhoto.mimeType.split("/")[1]}`,
         } as any;
-        formData.append('file', fileData);
+        formData.append("file", fileData);
       }
-      
+
       if (postAudio) {
         const fileData = {
           uri: postAudio.uri,
           type: postAudio.mimeType,
           name: postAudio.name,
         } as any;
-        formData.append('file', fileData);
+        formData.append("file", fileData);
       }
 
       uploadMedia(formData)
@@ -237,14 +249,16 @@ export default function PostContent({ navigation }: PostContentProp) {
 
   const handlePostContent = () => {
     Keyboard.dismiss();
-    
+
     if (!postText && !postPhoto && !postAudio) {
-      dispatch(openToast({ text: "Please add content to your post", type: "Failed" }));
+      dispatch(
+        openToast({ text: "Please add content to your post", type: "Failed" })
+      );
       return;
     }
 
     dispatch(openLoadingModal());
-    
+
     let content = postText || "";
     if (photoServer) {
       content += ` [Image: ${photoServer.uri}]`;
@@ -256,7 +270,7 @@ export default function PostContent({ navigation }: PostContentProp) {
         content += ` [Video: ${fileToServer}]`;
       }
     }
-    
+
     createPost({ content })
       .unwrap()
       .then((e) => {
@@ -414,14 +428,17 @@ export default function PostContent({ navigation }: PostContentProp) {
           <Animated.View
             entering={FadeInDown.springify()}
             exiting={FadeOutDown.springify()}
-            style={[{
-              position: "absolute",
-              bottom: 0,
+            style={[
+              {
+                position: "absolute",
+                bottom: 0,
 
-              gap: 10,
-              width,
-              marginBottom: 20,
-            },animatedStyles]}
+                gap: 10,
+                width,
+                marginBottom: 20,
+              },
+              animatedStyles,
+            ]}
           >
             {(progress > 0 || compressing) && (
               <Animated.View
@@ -448,12 +465,18 @@ export default function PostContent({ navigation }: PostContentProp) {
               ListHeaderComponent={
                 <View style={{ flexDirection: "row", gap: 10 }}>
                   <PickImageButton handleSetPhotoPost={handleSetPhotoPost} />
-                  <PickVideoButton
-                    handleSetPhotoPost={handleSetPhotoPost}
-                    setProgress={setProgress}
-                    setIsCompressing={setCompressing}
-                  />
-                  <PickAudioButton handleSetAudioPost={handleSetAudioPost} />
+                  {/* 🚫 MVP: Disable video upload */}
+                  {isFeatureEnabled('VIDEO_UPLOAD') && (
+                    <PickVideoButton
+                      handleSetPhotoPost={handleSetPhotoPost}
+                      setProgress={setProgress}
+                      setIsCompressing={setCompressing}
+                    />
+                  )}
+                  {/* 🚫 MVP: Disable audio upload */}
+                  {isFeatureEnabled('AUDIO_UPLOAD') && (
+                    <PickAudioButton handleSetAudioPost={handleSetAudioPost} />
+                  )}
                 </View>
               }
               showsHorizontalScrollIndicator={false}

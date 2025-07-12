@@ -14,8 +14,26 @@ import React, {
   useState,
 } from "react";
 
-import { AVPlaybackStatus, ResizeMode, Video } from "expo-av";
+import { Image, ImageBackground } from "expo-image";
 import { PauseIcon, PlayIcon, ProfileIcon } from "../../../icons";
+
+// 🚫 MVP: expo-av is deprecated - use fallback for compatibility
+let AVPlaybackStatus: any = null;
+let ResizeMode: any = null;
+let Video: any = null;
+try {
+  const expoAV = require("expo-av");
+  AVPlaybackStatus = expoAV.AVPlaybackStatus;
+  ResizeMode = expoAV.ResizeMode;
+  Video = expoAV.Video;
+} catch (error) {
+  console.warn('expo-av not available, using fallback');
+  AVPlaybackStatus = {};
+  ResizeMode = { CONTAIN: 'contain' };
+  Video = ({ children, ...props }: any) => <View {...props}>{children}</View>;
+}
+
+import { isFeatureEnabled } from "../../../../config/featureFlags";
 
 import Animated, {
   FadeIn,
@@ -34,7 +52,6 @@ import useGetMode from "../../../../hooks/GetMode";
 import Slider from "@react-native-community/slider";
 import convertMsToHMS from "../../../../util/convert";
 import { StatusBar } from "expo-status-bar";
-import { Image, ImageBackground } from "expo-image";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 
 const { height } = Dimensions.get("window");
@@ -56,6 +73,15 @@ export default function VideoPostFullScreen({
 
   videoViews?: string;
 }) {
+  // 🚫 MVP: Disable video functionality
+  if (!isFeatureEnabled('VIDEO_UPLOAD')) {
+    return (
+      <View style={{ height: height, width: "100%", justifyContent: 'center', alignItems: 'center' }}>
+        <Text style={{ color: 'gray', fontSize: 16 }}>🎬 Video coming soon!</Text>
+      </View>
+    );
+  }
+  
   const video = useRef<null | Video>(null);
 
   const [status, setStatus] = useState<any>(null);
@@ -166,7 +192,11 @@ export default function VideoPostFullScreen({
   const translateContext = useSharedValue({ x: 0, y: 0 });
   const animImageStyle = useAnimatedStyle(() => {
     return {
-      transform: [{ scale: scale.value }, { translateX: translateX.value }, { translateY: translateY.value }]
+      transform: [
+        { scale: scale.value },
+        { translateX: translateX.value },
+        { translateY: translateY.value },
+      ],
     };
   });
   const pinchGesture = Gesture.Pinch()
@@ -186,23 +216,22 @@ export default function VideoPostFullScreen({
     })
     .onEnd((e) => {});
 
-
   const panGesture = Gesture.Pan()
-  .onBegin((event) => {
-    translateContext.value = { x: translateX.value, y: translateY.value };
-  })
-  .onUpdate((event) => {
-    console.log(
-      "x y",
-      translateContext.value.x + event.translationX,
-      translateContext.value.y + event.translationY
-    );
+    .onBegin((event) => {
+      translateContext.value = { x: translateX.value, y: translateY.value };
+    })
+    .onUpdate((event) => {
+      console.log(
+        "x y",
+        translateContext.value.x + event.translationX,
+        translateContext.value.y + event.translationY
+      );
 
-    translateX.value = translateContext.value.x + event.translationX / 4;
-    translateY.value = translateContext.value.y + event.translationY / 4;
-    console.log("🚀 ~ file: index.tsx:pan ~ App ~ event:", event);
-  });
-const composed = Gesture.Simultaneous(pinchGesture, panGesture);
+      translateX.value = translateContext.value.x + event.translationX / 4;
+      translateY.value = translateContext.value.y + event.translationY / 4;
+      console.log("🚀 ~ file: index.tsx:pan ~ App ~ event:", event);
+    });
+  const composed = Gesture.Simultaneous(pinchGesture, panGesture);
   return (
     <View
       style={{

@@ -1,49 +1,61 @@
-import {
-  View,
-  Text,
-  Pressable,
-  ActivityIndicator,
-  useColorScheme,
-} from "react-native";
-import React, { useCallback, useEffect, useState } from "react";
-import IconButton from "../../../global/Buttons/IconButton";
-import { AVPlaybackStatus, ResizeMode, Video } from "expo-av";
-import { PlayIcon } from "../../../icons";
-import { Dimensions } from "react-native";
-import { useNavigation } from "@react-navigation/native";
-import Animated, {
-  FadeIn,
-  interpolate,
-  useAnimatedStyle,
-  useSharedValue,
-  withDelay,
-  withTiming,
-} from "react-native-reanimated";
+import { View, Text, Pressable, Dimensions } from "react-native";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Image } from "expo-image";
 import { useFocusEffect } from "@react-navigation/native";
 import useGetMode from "../../../../hooks/GetMode";
-import { current } from "@reduxjs/toolkit";
-import { HomeNavigationProp } from "../../../../types/navigation";
+import { PauseIcon, PlayIcon } from "../../../icons";
+import LoadingIndicator from "./LoadingIndicator";
+import IconButton from "../../../global/Buttons/IconButton";
+// 🚫 MVP: expo-av is deprecated - use fallback for compatibility
+let AVPlaybackStatus: any = null;
+let ResizeMode: any = null;
+let Video: any = null;
+try {
+  const expoAV = require("expo-av");
+  AVPlaybackStatus = expoAV.AVPlaybackStatus;
+  ResizeMode = expoAV.ResizeMode;
+  Video = expoAV.Video;
+} catch (error) {
+  console.warn("expo-av not available, using fallback");
+  AVPlaybackStatus = {};
+  ResizeMode = { CONTAIN: "contain" };
+  Video = ({ children, ...props }: any) => <View {...props}>{children}</View>;
+}
 
-function VideoPost({
-  videoTitle,
-  thumbNail,
-  videoUri,
-  imageUri,
-  userTag,
-  name,
+import { isFeatureEnabled } from "../../../../config/featureFlags";
 
-  videoViews,
-}: {
-  videoTitle?: string;
-  imageUri: string;
+interface VideoPostProps {
   videoUri: string;
-  thumbNail: string | null;
-  name: string;
-  userTag: string;
-  videoViews?: string;
-}) {
+  thumbnail?: string;
+  index: number;
+  pause?: boolean;
+  onPress?: () => void;
+}
 
+export default function VideoPost({
+  videoUri,
+  thumbnail,
+  index,
+  pause,
+  onPress,
+}: VideoPostProps) {
+  // 🚫 MVP: Disable video functionality
+  if (!isFeatureEnabled("VIDEO_UPLOAD")) {
+    return (
+      <View
+        style={{
+          height: 200,
+          width: "100%",
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+      >
+        <Text style={{ color: "gray", fontSize: 16 }}>
+          🎬 Video coming soon!
+        </Text>
+      </View>
+    );
+  }
 
   const navigation = useNavigation<HomeNavigationProp>();
   return (
@@ -91,5 +103,3 @@ function VideoPost({
     </View>
   );
 }
-
-export default VideoPost;

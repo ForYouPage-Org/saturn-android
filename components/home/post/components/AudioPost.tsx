@@ -1,14 +1,31 @@
 import * as React from "react";
 import { Text, View, Pressable } from "react-native";
-import { AVPlaybackStatus, Audio } from "expo-av";
-import { useCallback, useEffect, useRef, useState } from "react";
-let Lottie: any = null;
+// 🚫 MVP: expo-av is deprecated - use fallback for compatibility
+let AVPlaybackStatus: any = null;
+let Audio: any = null;
 try {
-  Lottie = require("lottie-react-native").default;
+  const expoAV = require("expo-av");
+  AVPlaybackStatus = expoAV.AVPlaybackStatus;
+  Audio = expoAV.Audio;
 } catch (error) {
-  const { View } = require("react-native");
-  Lottie = View;
+  console.warn("expo-av not available, using fallback");
+  AVPlaybackStatus = {};
+  Audio = {
+    Sound: class MockSound {
+      loadAsync = () => Promise.resolve();
+      playAsync = () => Promise.resolve();
+      pauseAsync = () => Promise.resolve();
+      unloadAsync = () => Promise.resolve();
+      setOnPlaybackStatusUpdate = () => {};
+    },
+  };
 }
+
+import { useEffect, useRef, useState } from "react";
+import { PauseIcon, PlayIcon } from "../../../icons";
+import useGetMode from "../../../../hooks/GetMode";
+import { isFeatureEnabled } from "../../../../config/featureFlags";
+import Lottie from "lottie-react-native";
 import Animated, {
   interpolate,
   useAnimatedStyle,
@@ -18,7 +35,6 @@ import Animated, {
 import { Image } from "expo-image";
 
 import IconButton from "../../../global/Buttons/IconButton";
-import { PlayIcon } from "../../../icons";
 import AudioPlayLottie from "./AudioPlayLottie";
 import { useAppDispatch, useAppSelector } from "../../../../redux/hooks/hooks";
 import { useFocusEffect } from "@react-navigation/native";
@@ -32,6 +48,24 @@ export default function AudioPost({
   photoUri: string;
   idx: number;
 }) {
+  // 🚫 MVP: Disable audio functionality
+  if (!isFeatureEnabled("AUDIO_UPLOAD")) {
+    return (
+      <View
+        style={{
+          height: 200,
+          width: "100%",
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+      >
+        <Text style={{ color: "gray", fontSize: 16 }}>
+          🎵 Audio coming soon!
+        </Text>
+      </View>
+    );
+  }
+
   const visibleIds = useAppSelector((state) => state.audio?.playingId);
   console.log("🚀 ~ file: AudioPost.tsx:29 ~ visibleIds:", visibleIds);
 
