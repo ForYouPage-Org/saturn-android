@@ -2,23 +2,16 @@ import storage from "../redux/storage";
 import { store } from "../redux/store";
 import { isFeatureEnabled } from "../config/featureFlags";
 
-// 🚫 MVP: Optional Socket.io import with fallback
-let io: any = null;
-try {
-  const socketIO = require("socket.io-client");
-  io = socketIO.io || socketIO.default || socketIO;
-} catch (error) {
-  // Socket.io not available - use mock implementation
-  io = () => ({
-    on: () => {},
-    off: () => {},
-    emit: () => {},
-    connect: () => {},
-    disconnect: () => {},
-    connected: false,
-    id: "mock-socket-id",
-  });
-}
+// 🚫 MVP: Mock Socket.io implementation (package removed for MVP)
+const io = () => ({
+  on: () => {},
+  off: () => {},
+  emit: () => {},
+  connect: () => {},
+  disconnect: () => {},
+  connected: false,
+  id: "mock-socket-id",
+});
 
 const persistRoot = storage.getString("persist:root");
 const userId = (): string | undefined => {
@@ -39,42 +32,17 @@ const userId = (): string | undefined => {
 };
 userId();
 
-// 🚫 MVP: Create mock socket when feature is disabled
-let socket: any;
+// 🚫 MVP: Create mock socket for MVP (Socket.io disabled)
+const socket = {
+  on: () => {},
+  off: () => {},
+  emit: () => {},
+  connect: () => {},
+  disconnect: () => {},
+  connected: false,
+  id: "mock-socket-id",
+};
 
-if (!isFeatureEnabled("SOCKET_CONNECTIONS")) {
-  // Return mock socket for MVP
-  socket = {
-    on: () => {},
-    off: () => {},
-    emit: () => {},
-    connect: () => {},
-    disconnect: () => {},
-    connected: false,
-    id: "mock-socket-id",
-  };
-  console.log("🚫 Socket.io disabled for MVP - using mock socket");
-} else {
-  // Create real socket connection
-  try {
-    socket = io(process.env.EXPO_PUBLIC_API_URL as string, {
-      autoConnect: true,
-      auth: {
-        token: userId(),
-      },
-    });
-  } catch (error) {
-    console.log("⚠️ Socket.io connection failed, using mock:", error);
-    socket = {
-      on: () => {},
-      off: () => {},
-      emit: () => {},
-      connect: () => {},
-      disconnect: () => {},
-      connected: false,
-      id: "mock-socket-id",
-    };
-  }
-}
+console.log("🚫 Socket.io disabled for MVP - using mock socket");
 
 export default socket;

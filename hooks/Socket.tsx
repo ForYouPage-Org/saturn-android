@@ -2,32 +2,24 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { useAppSelector } from "../redux/hooks/hooks";
 import { isFeatureEnabled, MOCK_RESPONSES } from "../config/featureFlags";
 
-// 🚫 MVP: Optional Socket.io import with fallback
-let io: any = null;
-let Socket: any = null;
-try {
-  const socketIO = require("socket.io-client");
-  io = socketIO.default || socketIO;
-  Socket = socketIO.Socket;
-} catch (error) {
-  // Socket.io not available - use mock implementation
-  io = () => ({
-    on: () => {},
-    off: () => {},
-    emit: () => {},
-    connect: () => {},
-    disconnect: () => {},
-    connected: false,
-  });
-  Socket = class MockSocket {
-    on() {}
-    off() {}
-    emit() {}
-    connect() {}
-    disconnect() {}
-    connected = false;
-  };
-}
+// 🚫 MVP: Mock Socket.io implementation (package removed for MVP)
+const io = () => ({
+  on: () => {},
+  off: () => {},
+  emit: () => {},
+  connect: () => {},
+  disconnect: () => {},
+  connected: false,
+});
+
+const Socket = class MockSocket {
+  on() {}
+  off() {}
+  emit() {}
+  connect() {}
+  disconnect() {}
+  connected = false;
+};
 
 const useSocket = (): typeof Socket | undefined => {
   const [socket, setSocket] = useState<typeof Socket | null>(null);
@@ -41,21 +33,11 @@ const useSocket = (): typeof Socket | undefined => {
       return;
     }
 
-    if (token && io) {
-      try {
-        socketRef.current = io(process.env.EXPO_PUBLIC_API_URL as string, {
-          autoConnect: true,
-          auth: {
-            token,
-          },
-        });
-      } catch (error) {
-        console.log("⚠️ Socket.io connection failed:", error);
-      }
-    }
+    // 🚫 MVP: Socket.io functionality disabled - using mock
+    console.log("🚫 Socket.io connections disabled for MVP");
   }, [token]);
 
-  // 🚫 MVP: Return null when sockets are disabled
+  // 🚫 MVP: Return undefined when sockets are disabled
   if (!isFeatureEnabled("SOCKET_CONNECTIONS")) {
     return undefined;
   }
