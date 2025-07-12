@@ -6,11 +6,15 @@ import { store } from "../redux/store";
 const persistRoot = storage.getString("persist:root");
 const userId = (): string | undefined => {
   if (persistRoot) {
-    const routes = JSON.parse(persistRoot);
-    if (routes) {
-      const user = JSON.parse(routes.user);
-
-      return user.token;
+    try {
+      const routes = JSON.parse(persistRoot);
+      if (routes) {
+        const user = JSON.parse(routes.user);
+        return user.token;
+      }
+    } catch (error) {
+      console.error('Failed to parse persisted user data:', error);
+      return undefined;
     }
     return undefined;
   }
