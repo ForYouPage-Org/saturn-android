@@ -50,10 +50,11 @@ export default function SearchBar() {
           height: 40,
           marginLeft: 20,
           borderColor: borderColor,
-          paddingVertical: 10,
-          paddingHorizontal: 20,
+          borderWidth: 1,
           borderRadius: 10,
           backgroundColor,
+          justifyContent: "center",
+          alignItems: "center",
         },
       ]}
     >
@@ -68,12 +69,14 @@ export default function SearchBar() {
         placeholderTextColor={placeholderColor}
         style={{
           width: "100%",
+          height: "100%",
           fontSize: 16,
           color,
-          fontFamily: "jakara",
-          includeFontPadding: false,
+          paddingHorizontal: 15,
+          paddingVertical: 0,
           textAlign: "left",
           textAlignVertical: "center",
+          backgroundColor: "transparent",
         }}
         autoCapitalize="none"
         autoCorrect={false}

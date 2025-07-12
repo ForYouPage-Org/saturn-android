@@ -143,6 +143,42 @@ export const userApi = createApi({
       query: () => "/user/following", // Keep this as fallback until backend implements
       providesTags: ["user"],
     }),
+
+    // 🔧 MVP: Mock follow functionality (until backend implements follow endpoints)
+    followUser: builder.mutation<
+      { status: "success"; message: string },
+      { id: string }
+    >({
+      queryFn: async ({ id }) => {
+        // Mock implementation - just return success
+        console.log("🔧 MVP: Mock follow user:", id);
+        return {
+          data: {
+            status: "success" as const,
+            message: `Successfully followed user ${id}`,
+          },
+        };
+      },
+      invalidatesTags: ["guest", "user"],
+    }),
+
+    // 🔧 MVP: Mock unfollow functionality (until backend implements follow endpoints)
+    unfollowUser: builder.mutation<
+      { status: "success"; message: string },
+      { id: string }
+    >({
+      queryFn: async ({ id }) => {
+        // Mock implementation - just return success
+        console.log("🔧 MVP: Mock unfollow user:", id);
+        return {
+          data: {
+            status: "success" as const,
+            message: `Successfully unfollowed user ${id}`,
+          },
+        };
+      },
+      invalidatesTags: ["guest", "user"],
+    }),
   }),
 });
 
@@ -166,4 +202,6 @@ export const {
   useLazyGetFollowingListQuery,
   useGetFollowersListQuery,
   useGetFollowingListQuery,
+  useFollowUserMutation,
+  useUnfollowUserMutation,
 } = userApi;

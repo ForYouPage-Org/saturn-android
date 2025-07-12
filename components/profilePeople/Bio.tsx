@@ -10,7 +10,10 @@ import Animated, {
   FadeOutDown,
   FadeOutUp,
 } from "react-native-reanimated";
-import { useLazyFollowUserQuery } from "../../redux/api/services";
+import {
+  useFollowUserMutation,
+  useUnfollowUserMutation,
+} from "../../redux/api/user";
 
 export default function Bio({
   name,
@@ -37,26 +40,42 @@ export default function Bio({
       .catch((e) => {});
   }, []);
 
-  const [followUser] = useLazyFollowUserQuery();
-  const handleFollow = () => {
-    setFollowed(!followed);
-    followUser({ id })
-      .then((e) => {})
-      .catch((e) => {});
-    if (followed) {
-      if (followers) {
-        setFollowers(followers - 1);
+  const [followUser] = useFollowUserMutation();
+  const [unfollowUser] = useUnfollowUserMutation();
+
+  const handleFollow = async () => {
+    try {
+      const wasFollowed = followed;
+      setFollowed(!followed);
+
+      if (wasFollowed) {
+        // Unfollow
+        await unfollowUser({ id }).unwrap();
+        if (followers) {
+          setFollowers(followers - 1);
+        }
+      } else {
+        // Follow
+        await followUser({ id }).unwrap();
+        if (followers) {
+          setFollowers(followers + 1);
+        }
       }
-    }
-    if (!followed) {
-      if (followers) {
-        setFollowers(followers + 1);
-      }
+    } catch (error) {
+      console.error("Follow/unfollow error:", error);
+      // Revert state on error
+      setFollowed(followed);
     }
   };
 
   return (
-    <View style={{ borderBottomWidth: 0.5, borderColor: "#B4B4B4D1",marginTop: 20 }}>
+    <View
+      style={{
+        borderBottomWidth: 0.5,
+        borderColor: "#B4B4B4D1",
+        marginTop: 20,
+      }}
+    >
       <View
         style={{
           paddingHorizontal: 15,

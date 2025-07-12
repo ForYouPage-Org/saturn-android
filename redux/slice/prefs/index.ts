@@ -8,6 +8,7 @@ const prefs = createSlice({
   name: "prefs",
   initialState: {
     mode: "system",
+    isHighEnd: false,
   } as Prefs,
   reducers: {
     setMode: (

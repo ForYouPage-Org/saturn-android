@@ -448,64 +448,87 @@ const Navigation = () => {
     jakara: require("./assets/fonts/PlusJakartaSans-Medium.ttf"),
   });
 
-  // 🔧 MVP: Conditional auto-login based on feature flag
-  useEffect(() => {
-    if (route === "onBoard") {
-      // Check if auto-login is enabled for development
-      if (isFeatureEnabled("DEV_AUTO_LOGIN")) {
-        // Skip onboarding and auth - go straight to app (development only)
-        const testUserData = {
-          _id: "6872b97082b9e189bf982804",
-          id: "6872b97082b9e189bf982804",
-          username: "testuser",
-          preferredUsername: "testuser",
-          followers: [],
-          following: [],
-          email: "testuser@example.com",
-          createdAt: "2025-07-12T19:37:20.231Z",
-          updatedAt: "2025-07-12T19:37:20.231Z",
-        };
-
-        const testToken =
-          "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4NzJiOTcwODJiOWUxODliZjk4MjgwNCIsInVzZXJuYW1lIjoidGVzdHVzZXIiLCJpYXQiOjE3NTIzNTAwMDUsImV4cCI6MTc1MjQzNjQwNX0.Q6Rr56qcCVGdLYUWqdDeKa8d-LYmBzNZbN9Fykdnz9Q";
-
-        dispatch(loginSuccess({ token: testToken, data: testUserData }));
-        dispatch(setRoute({ route: "App" }));
-      } else {
-        // 🚀 MVP Production: Normal flow - go to authentication
-        dispatch(setRoute({ route: "Auth" }));
-      }
+  // 🔧 MVP: Development helper - clear storage function
+  const clearAllStorage = async () => {
+    try {
+      console.log("🗑️ Clearing all persisted storage...");
+      await persistor.purge(); // Use Redux Persist's purge method
+      dispatch(clearUserData());
+      dispatch(setRoute({ route: "Auth" }));
+      console.log("✅ Storage cleared successfully");
+    } catch (error) {
+      console.error("❌ Error clearing storage:", error);
     }
-  }, [route]);
+  };
 
-  // 🔧 MVP: Check for persisted user data and validate token
+  // 🔧 MVP: Development - uncomment next line to force clear storage on app start
+  // useEffect(() => { clearAllStorage(); }, []); // 🔧 DISABLED: Storage clearing to allow login persistence
+
+  // 🔧 MVP: Authentication flow - check persisted data first, then route appropriately
   const userState = useAppSelector((state) => state.user);
   useEffect(() => {
-    if (userState.token && userState.data) {
-      console.log("🔍 Found persisted user data, checking token validity...");
+    const initializeAuth = async () => {
+      console.log("🔍 Initializing authentication...");
 
-      // Check if token is expired
-      try {
-        const tokenPayload = JSON.parse(atob(userState.token.split(".")[1]));
-        const isExpired = tokenPayload.exp * 1000 < Date.now();
+      // Check if we have persisted user data
+      if (userState.token && userState.data) {
+        console.log("🔍 Found persisted user data, checking token validity...");
 
-        if (isExpired) {
-          console.log(
-            "🚨 Token expired, clearing user data and routing to Auth"
-          );
+        // Check if token is expired
+        try {
+          const tokenPayload = JSON.parse(atob(userState.token.split(".")[1]));
+          const isExpired = tokenPayload.exp * 1000 < Date.now();
+
+          if (isExpired) {
+            console.log(
+              "🚨 Token expired, clearing user data and routing to Auth"
+            );
+            dispatch(clearUserData());
+            dispatch(setRoute({ route: "Auth" }));
+          } else {
+            console.log("✅ Token valid, routing to App");
+            dispatch(setRoute({ route: "App" }));
+          }
+        } catch (error) {
+          console.log("🚨 Invalid token format, clearing user data");
           dispatch(clearUserData());
           dispatch(setRoute({ route: "Auth" }));
-        } else {
-          console.log("✅ Token valid, routing to App");
-          dispatch(setRoute({ route: "App" }));
         }
-      } catch (error) {
-        console.log("🚨 Invalid token format, clearing user data");
-        dispatch(clearUserData());
-        dispatch(setRoute({ route: "Auth" }));
+      } else {
+        // No persisted data - check feature flags
+        if (isFeatureEnabled("DEV_AUTO_LOGIN")) {
+          console.log("🔧 DEV_AUTO_LOGIN enabled, auto-logging in...");
+          // Skip onboarding and auth - go straight to app (development only)
+          const testUserData = {
+            _id: "6872b97082b9e189bf982804",
+            id: "6872b97082b9e189bf982804",
+            username: "testuser",
+            preferredUsername: "testuser",
+            followers: [],
+            following: [],
+            email: "testuser@example.com",
+            createdAt: "2025-07-12T19:37:20.231Z",
+            updatedAt: "2025-07-12T19:37:20.231Z",
+          };
+
+          const testToken =
+            "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4NzJiOTcwODJiOWUxODliZjk4MjgwNCIsInVzZXJuYW1lIjoidGVzdHVzZXIiLCJpYXQiOjE3NTIzNTAwMDUsImV4cCI6MTc1MjQzNjQwNX0.Q6Rr56qcCVGdLYUWqdDeKa8d-LYmBzNZbN9Fykdnz9Q";
+
+          dispatch(loginSuccess({ token: testToken, data: testUserData }));
+          dispatch(setRoute({ route: "App" }));
+        } else {
+          // 🚀 MVP Production: Normal flow - go to authentication
+          console.log("🔐 No persisted data, routing to Auth");
+          dispatch(setRoute({ route: "Auth" }));
+        }
       }
+    };
+
+    // Only run auth initialization if we're on the onBoard route (initial state)
+    if (route === "onBoard") {
+      initializeAuth();
     }
-  }, [userState.token, userState.data]);
+  }, [route, userState.token, userState.data]);
 
   const renderRoute = () => {
     if (route === "onBoard") {

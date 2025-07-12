@@ -3,7 +3,10 @@ import { View, Text, Dimensions, Pressable } from "react-native";
 import Animated, { FadeInLeft } from "react-native-reanimated";
 import { useState } from "react";
 import { IPerson } from "../../../types/api";
-import { useLazyFollowUserQuery } from "../../../redux/api/services";
+import {
+  useFollowUserMutation,
+  useUnfollowUserMutation,
+} from "../../../redux/api/user";
 import {
   useLazyGetFollowDetailsQuery,
   useLazyGetUserQuery,
@@ -26,7 +29,8 @@ export default function PeopleContainer({
   const [follow, setFollow] = useState(() => isFollowed);
   const user = useAppSelector((state) => state.user);
   const navigation = useNavigation<HomeNavigationProp>();
-  const [followUser] = useLazyFollowUserQuery();
+  const [followUser] = useFollowUserMutation();
+  const [unfollowUser] = useUnfollowUserMutation();
 
   const dark = useGetMode();
   const color = dark ? "white" : "black";
@@ -36,10 +40,21 @@ export default function PeopleContainer({
   const nBColor = !dark ? "white" : "black";
   const fBColor = dark ? "white" : "black";
 
-  const handleFollow = () => {
-    setFollow(!follow);
-
-    followUser({ id }).then((e) => {});
+  const handleFollow = async () => {
+    try {
+      const wasFollowed = follow;
+      setFollow(!follow);
+      
+      if (wasFollowed) {
+        await unfollowUser({ id }).unwrap();
+      } else {
+        await followUser({ id }).unwrap();
+      }
+    } catch (error) {
+      console.error("Follow/unfollow error:", error);
+      // Revert state on error
+      setFollow(follow);
+    }
   };
   const isMe = user.data?.userName === userName;
   return (
