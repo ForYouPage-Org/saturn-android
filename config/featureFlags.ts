@@ -10,7 +10,7 @@ export const FEATURE_FLAGS = {
   SOCKET_CONNECTIONS: false, // Disable all Socket.io connections
   VIDEO_UPLOAD: false, // Disable video upload/processing
   AUDIO_UPLOAD: false, // Disable audio upload/processing
-  ADVANCED_SEARCH: false, // Disable complex search features
+  ADVANCED_SEARCH: true, // Enable search features for MVP
   COMPLEX_MEDIA_PROCESSING: false, // Disable compression/processing
   DRAWER_NAVIGATION: false, // Disable complex drawer navigation
   BLUR_EFFECTS: false, // Disable expensive BlurView effects

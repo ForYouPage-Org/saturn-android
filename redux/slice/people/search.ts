@@ -1,7 +1,6 @@
 import { IPerson, IPost } from "./../../../types/api";
 import { createSlice } from "@reduxjs/toolkit";
-import { postLists } from "../../../data/test";
-import { servicesApi } from "../../api/services";
+import { userApi } from "../../api/user";
 
 export type personState = {
   data: IPerson[];
@@ -18,61 +17,48 @@ const searchPeople = createSlice({
   } as personState,
   reducers: {
     addPost: () => {},
+    clearSearchResults: (state) => {
+      state.data = [];
+      state.error = null;
+      state.loading = false;
+    },
   },
   extraReducers: (builder) => {
+    // Listen to userApi searchActors endpoint
     builder.addMatcher(
-      servicesApi.endpoints.getRandomPeople.matchFulfilled,
+      userApi.endpoints.searchActors.matchFulfilled,
       (state, { payload }) => {
- 
-        state.data = payload.people;
+        console.log("🔍 Search actors fulfilled:", payload);
+        // Transform backend data to match frontend expectations
+        state.data = payload.data.map((actor: any) => ({
+          id: actor.id,
+          name: actor.preferredUsername || actor.username,
+          userName: actor.username,
+          imageUri: actor.iconUrl || undefined,
+          verified: false, // Backend doesn't provide this yet
+          isFollowed: false, // Backend doesn't provide this in search results
+        }));
         state.error = null;
         state.loading = false;
       }
     );
+    builder.addMatcher(userApi.endpoints.searchActors.matchPending, (state) => {
+      console.log("🔍 Search actors pending");
+      state.error = null;
+      state.loading = true;
+      // Don't clear data immediately to avoid flicker
+    });
     builder.addMatcher(
-      servicesApi.endpoints.getRandomPeople.matchPending,
-      (state, { payload }) => {
-        state.data = [];
-        state.error = null;
-        state.loading = true;
-      }
-    );
-    builder.addMatcher(
-      servicesApi.endpoints.getRandomPeople.matchRejected,
-      (state, { payload, error }) => {
+      userApi.endpoints.searchActors.matchRejected,
+      (state, { error }) => {
+        console.error("🚨 Search actors rejected:", error);
         state.data = [];
         state.error = error;
         state.loading = false;
       }
     );
-
-    builder.addMatcher(
-        servicesApi.endpoints.searchPeople.matchFulfilled,
-        (state, { payload }) => {
-  
-          state.data = payload.people;
-          state.error = null;
-          state.loading = false;
-        }
-      );
-      builder.addMatcher(
-        servicesApi.endpoints.searchPeople.matchPending,
-        (state, { payload }) => {
-          state.data = [];
-          state.error = null;
-          state.loading = true;
-        }
-      );
-      builder.addMatcher(
-        servicesApi.endpoints.searchPeople.matchRejected,
-        (state, { payload, error }) => {
-          state.data = [];
-          state.error = error;
-          state.loading = false;
-        }
-      );
-
   },
 });
 
+export const { clearSearchResults } = searchPeople.actions;
 export default searchPeople.reducer;

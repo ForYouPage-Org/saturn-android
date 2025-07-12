@@ -1,7 +1,7 @@
 import "react-native-get-random-values";
 
 // Polyfill for setImmediate on web
-if (typeof setImmediate === 'undefined') {
+if (typeof setImmediate === "undefined") {
   global.setImmediate = (callback, ...args) => {
     return setTimeout(callback, 0, ...args);
   };
@@ -82,7 +82,7 @@ try {
     addNotificationReceivedListener: () => ({ remove: () => {} }),
     addNotificationResponseReceivedListener: () => ({ remove: () => {} }),
     getNotificationCategoriesAsync: () => Promise.resolve([]),
-    getLastNotificationResponseAsync: () => Promise.resolve(null)
+    getLastNotificationResponseAsync: () => Promise.resolve(null),
   };
 }
 import { PixelRatio } from "react-native";
@@ -92,7 +92,7 @@ try {
 } catch (error) {
   DeviceInfo = {
     getTotalMemorySync: () => 8000000000,
-    getApiLevelSync: () => 34
+    getApiLevelSync: () => 34,
   };
 }
 import { setHighEnd } from "./redux/slice/prefs";
@@ -100,26 +100,27 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import SystemNavigationBar from "./utils/systemNavigationBar";
 import { isFeatureEnabled } from "./config/featureFlags";
+import { clearUserData } from "./redux/slice/user";
 
 // Skip enableFreeze in Expo Go as it can cause issues
 try {
-  if (__DEV__ && typeof __EXPO_GO__ === 'undefined') {
+  if (__DEV__ && typeof __EXPO_GO__ === "undefined") {
     enableFreeze(true);
   }
 } catch (error) {
-  console.warn('enableFreeze failed:', error);
+  console.warn("enableFreeze failed:", error);
 }
 
 // Skip Sentry in Expo Go
 try {
-  if (typeof __EXPO_GO__ === 'undefined') {
+  if (typeof __EXPO_GO__ === "undefined") {
     Sentry.init({
       dsn: "https://a5db1485b6b50a45db57917521128254@o4505750037725184.ingest.sentry.io/4505750586195968",
       enabled: true,
     });
   }
 } catch (error) {
-  console.warn('Sentry init failed:', error);
+  console.warn("Sentry init failed:", error);
 }
 
 const persistor = persistStore(store);
@@ -127,7 +128,7 @@ const persistor = persistStore(store);
 try {
   SplashScreen.preventAutoHideAsync();
 } catch (error) {
-  console.warn('SplashScreen.preventAutoHideAsync failed:', error);
+  console.warn("SplashScreen.preventAutoHideAsync failed:", error);
 }
 
 SystemNavigationBar.setNavigationColor("transparent");
@@ -167,7 +168,7 @@ export default function App() {
       <SafeAreaProvider>
         <Provider store={store}>
           <PersistGate persistor={persistor}>
-            {Platform.OS === 'android' ? (
+            {Platform.OS === "android" ? (
               <PaperProvider>
                 <CustomToast />
                 <LoadingModal />
@@ -455,18 +456,19 @@ const Navigation = () => {
         // Skip onboarding and auth - go straight to app (development only)
         const testUserData = {
           _id: "6872b97082b9e189bf982804",
-          id: "6872b97082b9e189bf982804", 
+          id: "6872b97082b9e189bf982804",
           username: "testuser",
           preferredUsername: "testuser",
           followers: [],
           following: [],
           email: "testuser@example.com",
           createdAt: "2025-07-12T19:37:20.231Z",
-          updatedAt: "2025-07-12T19:37:20.231Z"
+          updatedAt: "2025-07-12T19:37:20.231Z",
         };
-        
-        const testToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4NzJiOTcwODJiOWUxODliZjk4MjgwNCIsInVzZXJuYW1lIjoidGVzdHVzZXIiLCJpYXQiOjE3NTIzNTAwMDUsImV4cCI6MTc1MjQzNjQwNX0.Q6Rr56qcCVGdLYUWqdDeKa8d-LYmBzNZbN9Fykdnz9Q";
-        
+
+        const testToken =
+          "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4NzJiOTcwODJiOWUxODliZjk4MjgwNCIsInVzZXJuYW1lIjoidGVzdHVzZXIiLCJpYXQiOjE3NTIzNTAwMDUsImV4cCI6MTc1MjQzNjQwNX0.Q6Rr56qcCVGdLYUWqdDeKa8d-LYmBzNZbN9Fykdnz9Q";
+
         dispatch(loginSuccess({ token: testToken, data: testUserData }));
         dispatch(setRoute({ route: "App" }));
       } else {
@@ -475,6 +477,35 @@ const Navigation = () => {
       }
     }
   }, [route]);
+
+  // 🔧 MVP: Check for persisted user data and validate token
+  const userState = useAppSelector((state) => state.user);
+  useEffect(() => {
+    if (userState.token && userState.data) {
+      console.log("🔍 Found persisted user data, checking token validity...");
+
+      // Check if token is expired
+      try {
+        const tokenPayload = JSON.parse(atob(userState.token.split(".")[1]));
+        const isExpired = tokenPayload.exp * 1000 < Date.now();
+
+        if (isExpired) {
+          console.log(
+            "🚨 Token expired, clearing user data and routing to Auth"
+          );
+          dispatch(clearUserData());
+          dispatch(setRoute({ route: "Auth" }));
+        } else {
+          console.log("✅ Token valid, routing to App");
+          dispatch(setRoute({ route: "App" }));
+        }
+      } catch (error) {
+        console.log("🚨 Invalid token format, clearing user data");
+        dispatch(clearUserData());
+        dispatch(setRoute({ route: "Auth" }));
+      }
+    }
+  }, [userState.token, userState.data]);
 
   const renderRoute = () => {
     if (route === "onBoard") {
@@ -570,9 +601,7 @@ const Navigation = () => {
           style={style}
           // 🚫 MVP: Remove backgroundColor to fix edge-to-edge warnings
         />
-        <View
-          style={{ flex: 1, backgroundColor: dark ? "black" : "white" }}
-        >
+        <View style={{ flex: 1, backgroundColor: dark ? "black" : "white" }}>
           {renderRoute()}
         </View>
       </AnimatedSplashScreen>
