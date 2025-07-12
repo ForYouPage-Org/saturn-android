@@ -17,21 +17,12 @@ import React, {
 import { Image, ImageBackground } from "expo-image";
 import { PauseIcon, PlayIcon, ProfileIcon } from "../../../icons";
 
-// 🚫 MVP: expo-av is deprecated - use fallback for compatibility
-let AVPlaybackStatus: any = null;
-let ResizeMode: any = null;
-let Video: any = null;
-try {
-  const expoAV = require("expo-av");
-  AVPlaybackStatus = expoAV.AVPlaybackStatus;
-  ResizeMode = expoAV.ResizeMode;
-  Video = expoAV.Video;
-} catch (error) {
-  console.warn('expo-av not available, using fallback');
-  AVPlaybackStatus = {};
-  ResizeMode = { CONTAIN: 'contain' };
-  Video = ({ children, ...props }: any) => <View {...props}>{children}</View>;
-}
+// 🚫 MVP: expo-av completely removed - simplified fallback
+const Video = ({ children, ...props }: any) => (
+  <View {...props}>{children}</View>
+);
+const ResizeMode = { CONTAIN: "contain" };
+const AVPlaybackStatus = {};
 
 import { isFeatureEnabled } from "../../../../config/featureFlags";
 
@@ -74,14 +65,23 @@ export default function VideoPostFullScreen({
   videoViews?: string;
 }) {
   // 🚫 MVP: Disable video functionality
-  if (!isFeatureEnabled('VIDEO_UPLOAD')) {
+  if (!isFeatureEnabled("VIDEO_UPLOAD")) {
     return (
-      <View style={{ height: height, width: "100%", justifyContent: 'center', alignItems: 'center' }}>
-        <Text style={{ color: 'gray', fontSize: 16 }}>🎬 Video coming soon!</Text>
+      <View
+        style={{
+          height: height,
+          width: "100%",
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+      >
+        <Text style={{ color: "gray", fontSize: 16 }}>
+          🎬 Video coming soon!
+        </Text>
       </View>
     );
   }
-  
+
   const video = useRef<null | Video>(null);
 
   const [status, setStatus] = useState<any>(null);

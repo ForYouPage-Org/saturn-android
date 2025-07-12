@@ -40,7 +40,11 @@ import {
   closeLoadingModal,
   openLoadingModal,
 } from "../../redux/slice/modal/loading";
-import PickVideoButton from "../../components/postContent/PickVideoButton";
+// 🚫 MVP: Removed video processing to optimize bundle size
+// import PickVideoButton from "../../components/postContent/PickVideoButton";
+// import { AnimatedCircularProgress } from "react-native-circular-progress";
+// import * as Progress from "react-native-progress";
+
 import Animated, {
   FadeIn,
   FadeInDown,
@@ -50,9 +54,6 @@ import Animated, {
   useAnimatedStyle,
 } from "react-native-reanimated";
 import { Image } from "expo-image";
-import { AnimatedCircularProgress } from "react-native-circular-progress";
-
-import * as Progress from "react-native-progress";
 import { isFeatureEnabled } from "../../config/featureFlags";
 
 const width = Dimensions.get("window").width;
@@ -283,23 +284,14 @@ export default function PostContent({ navigation }: PostContentProp) {
         dispatch(closeLoadingModal());
       });
   };
-  const [progress, setProgress] = useState(0);
-  console.log(
-    "🚀 ~ file: PostContent.tsx:348 ~ PostContent ~ progress:",
-    progress
-  );
-
-  const [compressing, setCompressing] = useState(false);
-  console.log(
-    "🚀 ~ file: PostContent.tsx:338 ~ PostContent ~ compressing:",
-    compressing
-  );
-
-  useEffect(() => {
-    if (progress > 0.9) {
-      setProgress(0);
-    }
-  }, [progress]);
+  // 🚫 MVP: Removed video compression state to optimize performance
+  // const [progress, setProgress] = useState(0);
+  // const [compressing, setCompressing] = useState(false);
+  // useEffect(() => {
+  //   if (progress > 0.9) {
+  //     setProgress(0);
+  //   }
+  // }, [progress]);
 
   return (
     <AnimatedScreen>
@@ -465,14 +457,7 @@ export default function PostContent({ navigation }: PostContentProp) {
               ListHeaderComponent={
                 <View style={{ flexDirection: "row", gap: 10 }}>
                   <PickImageButton handleSetPhotoPost={handleSetPhotoPost} />
-                  {/* 🚫 MVP: Disable video upload */}
-                  {isFeatureEnabled('VIDEO_UPLOAD') && (
-                    <PickVideoButton
-                      handleSetPhotoPost={handleSetPhotoPost}
-                      setProgress={setProgress}
-                      setIsCompressing={setCompressing}
-                    />
-                  )}
+                  {/* 🚫 MVP: Video upload completely removed to optimize bundle size */}
                   {/* 🚫 MVP: Disable audio upload */}
                   {isFeatureEnabled('AUDIO_UPLOAD') && (
                     <PickAudioButton handleSetAudioPost={handleSetAudioPost} />

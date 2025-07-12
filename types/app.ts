@@ -1,19 +1,13 @@
-// 🚫 MVP: expo-av is deprecated - use fallback for compatibility
-let Audio: any = null;
-try {
-  Audio = require("expo-av").Audio;
-} catch (error) {
-  console.warn("expo-av not available, using fallback");
-  Audio = {
-    Recording: class MockRecording {
-      prepareToRecordAsync = () => Promise.resolve();
-      startAsync = () => Promise.resolve();
-      stopAndUnloadAsync = () => Promise.resolve({ uri: "mock-uri" });
-      getURI = () => "mock-uri";
-    },
-    RECORDING_OPTIONS_PRESET_HIGH_QUALITY: {},
-  };
-}
+// 🚫 MVP: expo-av completely removed - simplified fallback
+const Audio = {
+  Recording: class MockRecording {
+    prepareToRecordAsync = () => Promise.resolve();
+    startAsync = () => Promise.resolve();
+    stopAndUnloadAsync = () => Promise.resolve({ uri: "mock-uri" });
+    getURI = () => "mock-uri";
+  },
+  RECORDING_OPTIONS_PRESET_HIGH_QUALITY: {},
+};
 
 export { Audio };
 

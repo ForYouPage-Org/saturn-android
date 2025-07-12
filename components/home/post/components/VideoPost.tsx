@@ -6,21 +6,12 @@ import useGetMode from "../../../../hooks/GetMode";
 import { PauseIcon, PlayIcon } from "../../../icons";
 import LoadingIndicator from "./LoadingIndicator";
 import IconButton from "../../../global/Buttons/IconButton";
-// 🚫 MVP: expo-av is deprecated - use fallback for compatibility
-let AVPlaybackStatus: any = null;
-let ResizeMode: any = null;
-let Video: any = null;
-try {
-  const expoAV = require("expo-av");
-  AVPlaybackStatus = expoAV.AVPlaybackStatus;
-  ResizeMode = expoAV.ResizeMode;
-  Video = expoAV.Video;
-} catch (error) {
-  console.warn("expo-av not available, using fallback");
-  AVPlaybackStatus = {};
-  ResizeMode = { CONTAIN: "contain" };
-  Video = ({ children, ...props }: any) => <View {...props}>{children}</View>;
-}
+// 🚫 MVP: expo-av completely removed - simplified fallback
+const Video = ({ children, ...props }: any) => (
+  <View {...props}>{children}</View>
+);
+const ResizeMode = { CONTAIN: "contain" };
+const AVPlaybackStatus = {};
 
 import { isFeatureEnabled } from "../../../../config/featureFlags";
 

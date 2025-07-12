@@ -1,25 +1,16 @@
 import * as React from "react";
 import { Text, View, Pressable } from "react-native";
-// 🚫 MVP: expo-av is deprecated - use fallback for compatibility
-let AVPlaybackStatus: any = null;
-let Audio: any = null;
-try {
-  const expoAV = require("expo-av");
-  AVPlaybackStatus = expoAV.AVPlaybackStatus;
-  Audio = expoAV.Audio;
-} catch (error) {
-  console.warn("expo-av not available, using fallback");
-  AVPlaybackStatus = {};
-  Audio = {
-    Sound: class MockSound {
-      loadAsync = () => Promise.resolve();
-      playAsync = () => Promise.resolve();
-      pauseAsync = () => Promise.resolve();
-      unloadAsync = () => Promise.resolve();
-      setOnPlaybackStatusUpdate = () => {};
-    },
-  };
-}
+// 🚫 MVP: expo-av completely removed - simplified fallback
+const Audio = {
+  Sound: class MockSound {
+    loadAsync = () => Promise.resolve();
+    playAsync = () => Promise.resolve();
+    pauseAsync = () => Promise.resolve();
+    unloadAsync = () => Promise.resolve();
+    setOnPlaybackStatusUpdate = () => {};
+  },
+};
+const AVPlaybackStatus = {};
 
 import { useEffect, useRef, useState } from "react";
 import { PauseIcon, PlayIcon } from "../../../icons";

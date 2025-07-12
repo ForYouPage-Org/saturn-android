@@ -23,7 +23,6 @@ import {
   REGISTER,
   PersistConfig,
 } from "redux-persist";
-import chatList, { ChatList } from "./slice/chat/chatlist";
 import { userApi } from "./api/user";
 import { servicesApi } from "./api/services";
 import { postsApi } from "./api/posts";
@@ -32,10 +31,12 @@ import loadingModal, { LoadingModal } from "./slice/modal/loading";
 import searchPeople, { personState } from "./slice/people/search";
 import followers, { FollowerState } from "./slice/user/followers";
 import followedPost from "./slice/post/followed";
-import { chatApi } from "./api/chat";
-import online from "./slice/chat/online";
 import currentPage from "./slice/currentPage";
-import audio from "./slice/post/audio"
+// 🚫 MVP: Removed chat imports to eliminate resource leakage
+// import chatList, { ChatList } from "./slice/chat/chatlist";
+// import { chatApi } from "./api/chat";
+// import online from "./slice/chat/online";
+// import audio from "./slice/post/audio"
 const persistConfig: PersistConfig<
   CombinedState<{
     routes: Route;
@@ -45,22 +46,23 @@ const persistConfig: PersistConfig<
     searchPost: postState;
     toast: ToastState;
     user: UserState;
-    online: { ids: Array<string> };
     followers: FollowerState;
     searchPeople: personState;
     loadingModal: LoadingModal;
     followedPost: postState;
-    audio: any;
-    chatlist: ChatList;
     currentPage: {
       page: string | null;
     };
-    [chatApi.reducerPath]: any;
     [authApi.reducerPath]: any;
     [userApi.reducerPath]: any;
     [servicesApi.reducerPath]: any;
     [postsApi.reducerPath]: any;
     [mediaApi.reducerPath]: any;
+    // 🚫 MVP: Removed chat-related types to eliminate resource leakage
+    // online: { ids: Array<string> };
+    // audio: any;
+    // chatlist: ChatList;
+    // [chatApi.reducerPath]: any;
   }>
 > = {
   key: "root",
@@ -74,14 +76,9 @@ const reducer = combineReducers({
   bottomSheet,
   post,
   toast,
-
   loadingModal,
   searchPost,
   followers,
-  chatlist: chatList,
-  online,
-  audio,
-  [chatApi.reducerPath]: chatApi.reducer,
   [authApi.reducerPath]: authApi.reducer,
   [userApi.reducerPath]: userApi.reducer,
   [servicesApi.reducerPath]: servicesApi.reducer,
@@ -91,6 +88,11 @@ const reducer = combineReducers({
   searchPeople,
   followedPost,
   currentPage,
+  // 🚫 MVP: Removed chat reducers to eliminate resource leakage
+  // chatlist: chatList,
+  // online,
+  // audio,
+  // [chatApi.reducerPath]: chatApi.reducer,
 });
 const persistedReducer = persistReducer(persistConfig, reducer);
 
@@ -108,8 +110,9 @@ export const store = configureStore({
       .concat(userApi.middleware)
       .concat(servicesApi.middleware)
       .concat(postsApi.middleware)
-      .concat(mediaApi.middleware)
-      .concat(chatApi.middleware),
+      .concat(mediaApi.middleware),
+      // 🚫 MVP: Removed chat middleware to eliminate resource leakage
+      // .concat(chatApi.middleware),
 });
 
 // Export types after store creation to avoid circular dependencies

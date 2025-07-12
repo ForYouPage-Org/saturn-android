@@ -19,9 +19,7 @@
         "react-native-screens@~3.31.1"
       ]
     },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
+    "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "org.foryoupage.saturn",
@@ -54,7 +52,6 @@
           "color": "#ffffff"
         }
       ],
-      "react-native-compressor",
       "react-native-edge-to-edge",
       [
         "expo-build-properties",
@@ -67,7 +64,6 @@
           }
         }
       ],
-      "expo-video",
       "expo-font",
       "expo-asset",
       "expo-image-picker"

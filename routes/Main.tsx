@@ -34,19 +34,22 @@ import ProfilePeople from "../screen/App/ProfilePeople";
 import ChatScreen from "../screen/App/ChatScreen";
 import SearchUsers from "../screen/App/SearchUsers";
 
-import {
-  addNewChat,
-  addNewIndication,
-  addToChatList,
-} from "../redux/slice/chat/chatlist";
+// 🚫 MVP: Removed chat imports to eliminate resource leakage
+// import {
+//   addNewChat,
+//   addNewIndication,
+//   addToChatList,
+// } from "../redux/slice/chat/chatlist";
+// import { updateOnlineIds } from "../redux/slice/chat/online";
+// import { IMessageSocket } from "../types/socket";
+// import { useLazyGetAllChatsQuery } from "../redux/api/chat";
+
 import * as BackgroundFetch from "expo-background-fetch";
 import * as TaskManager from "expo-task-manager";
 // 🚫 MVP: Background processing imports kept for compatibility but disabled via feature flags
 import { AppState } from "react-native";
 
-import { updateOnlineIds } from "../redux/slice/chat/online";
 import { openToast } from "../redux/slice/toast/toast";
-import { IMessageSocket } from "../types/socket";
 
 import useSocket from "../hooks/Socket";
 import { isFeatureEnabled } from "../config/featureFlags";
@@ -55,7 +58,6 @@ import Notifications from "../util/notification";
 
 import { BottomTabNavigator } from "./Main/BottomNavigation";
 import { dismissAllNotificationsAsync } from "expo-notifications";
-import { useLazyGetAllChatsQuery } from "../redux/api/chat";
 import FollowingFollowers from "../screen/App/FollowingFollowers";
 import EditProfile from "../screen/App/EditProfile";
 import ChangeData from "../screen/App/ChangeData";
@@ -64,7 +66,7 @@ const BACKGROUND_FETCH_TASK = "background-fetch";
 const Stack = createStackNavigator<RootStackParamList>();
 
 // 🚫 MVP: Disable background processing
-if (isFeatureEnabled('BACKGROUND_PROCESSING')) {
+if (isFeatureEnabled("BACKGROUND_PROCESSING")) {
   TaskManager.defineTask(BACKGROUND_FETCH_TASK, async () => {
     const now = Date.now();
 
@@ -78,8 +80,10 @@ if (isFeatureEnabled('BACKGROUND_PROCESSING')) {
 }
 
 export default function Main() {
+  // 🚫 MVP: Always call hook but conditionally use based on feature flag
   const [updateNotificationId] = useUpdateNotificationIdMutation();
-  const chatList = useAppSelector((state) => state?.chatlist?.data);
+  // 🚫 MVP: Removed chat state to eliminate resource leakage
+  // const chatList = useAppSelector((state) => state?.chatlist?.data);
   const id = useAppSelector((state) => state.user?.data?.id);
   const dark = useGetMode();
   const isDark = dark;
@@ -89,23 +93,25 @@ export default function Main() {
   const dispatch = useAppDispatch();
   const socket = useSocket();
   const borderColor = isDark ? "#FFFFFF7D" : "#4545452D";
-  const [getAllChats] = useLazyGetAllChatsQuery();
+  // 🚫 MVP: Removed chat API calls to eliminate resource leakage
+  // const [getAllChats] = useLazyGetAllChatsQuery();
   useGetUserQuery(null);
-  useEffect(() => {
-    getAllChats(null)
-      .then((e) => {})
-      .catch((e) => e);
-  }, []);
+  // 🚫 MVP: Removed chat initialization to eliminate resource leakage
+  // useEffect(() => {
+  //   getAllChats(null)
+  //     .then((e) => {})
+  //     .catch((e) => e);
+  // }, []);
 
   useEffect(() => {
     console.log(process.env.EXPO_PUBLIC_PROJECT_ID);
-    
+
     // 🚫 MVP: Disable push notifications
-    if (!isFeatureEnabled('PUSH_NOTIFICATIONS')) {
-      console.log('🚫 Push notifications disabled for MVP');
+    if (!isFeatureEnabled("PUSH_NOTIFICATIONS")) {
+      console.log("🚫 Push notifications disabled for MVP");
       return;
     }
-    
+
     async function registerForPushNotificationsAsync() {
       try {
         let token;
@@ -156,7 +162,10 @@ export default function Main() {
     registerForPushNotificationsAsync()
       .then((e) => {
         console.log("🚀 ~ file: Main.tsx:187 ~ .then ~ e:", e);
-        updateNotificationId({ notificationId: e?.data as string });
+        // 🚫 MVP: Only update notification ID if notifications are enabled
+        if (isFeatureEnabled("PUSH_NOTIFICATIONS")) {
+          updateNotificationId({ notificationId: e?.data as string });
+        }
       })
       .catch((e) => {
         console.log(e);
@@ -173,10 +182,10 @@ export default function Main() {
 
   useEffect(() => {
     // 🚫 MVP: Disable Socket.io connections
-    if (!isFeatureEnabled('SOCKET_CONNECTIONS')) {
+    if (!isFeatureEnabled("SOCKET_CONNECTIONS")) {
       return;
     }
-    
+
     socket?.on("connected", (connected) => {
       dispatch(openToast({ text: "Connected", type: "Success" }));
     });
@@ -187,10 +196,10 @@ export default function Main() {
 
   useEffect(() => {
     // 🚫 MVP: Disable Socket.io connections
-    if (!isFeatureEnabled('SOCKET_CONNECTIONS')) {
+    if (!isFeatureEnabled("SOCKET_CONNECTIONS")) {
       return;
     }
-    
+
     socket?.emit("followedStatus");
     socket?.on("following", (following: number) => {
       if (following) dispatch(updateFollowing({ following }));
@@ -204,89 +213,92 @@ export default function Main() {
     };
   }, [socket]);
 
-  useEffect(() => {
-    // 🚫 MVP: Disable Socket.io connections
-    if (!isFeatureEnabled('SOCKET_CONNECTIONS')) {
-      return;
-    }
-    
-    const rooms: string[] = [];
-    for (let i in chatList) {
-      rooms.push(chatList[i]?.id);
-    }
-    socket?.emit("chat", rooms);
+  // 🚫 MVP: Removed chat room management to eliminate resource leakage
+  // useEffect(() => {
+  //   // 🚫 MVP: Disable Socket.io connections
+  //   if (!isFeatureEnabled("SOCKET_CONNECTIONS")) {
+  //     return;
+  //   }
 
-    return () => {
-      socket?.off("chat");
-    };
-  }, [chatList]);
+  //   const rooms: string[] = [];
+  //   for (let i in chatList) {
+  //     rooms.push(chatList[i]?.id);
+  //   }
+  //   socket?.emit("chat", rooms);
 
-  useEffect(() => {
-    // 🚫 MVP: Disable Socket.io connections
-    if (!isFeatureEnabled('SOCKET_CONNECTIONS')) {
-      return;
-    }
-    
-    if (socket) {
-      socket?.on("newChat", (chatMessages) => {
-        console.log(
-          "🚀 ~ file: Main.tsx:203 ~ socket?.on ~ chatMessages:",
-          chatMessages
-        );
-        if (chatMessages) {
-          if (chatMessages?.isNew) {
-            dispatch(
-              addToChatList({
-                id: chatMessages?.id,
-                messages: chatMessages?.messages,
-                users: chatMessages?.users,
-              })
-            );
-            dispatch(addNewIndication());
-          }
-        }
-      });
-    }
-    return () => {
-      socket?.off("newChat");
-    };
-  }, [socket]);
+  //   return () => {
+  //     socket?.off("chat");
+  //   };
+  // }, [chatList]);
 
-  useEffect(() => {
-    // 🚫 MVP: Disable Socket.io connections
-    if (!isFeatureEnabled('SOCKET_CONNECTIONS')) {
-      return;
-    }
-    
-    socket?.on("online", (online) => {
-      dispatch(updateOnlineIds({ ids: online }));
-    });
+  // 🚫 MVP: Removed new chat handling to eliminate resource leakage
+  // useEffect(() => {
+  //   // 🚫 MVP: Disable Socket.io connections
+  //   if (!isFeatureEnabled("SOCKET_CONNECTIONS")) {
+  //     return;
+  //   }
 
-    socket?.on("message", (data: IMessageSocket) => {
-      if (data) {
-        console.log(
-          "🚀 ~ file: Main.tsx:267 ~ socket?.on ~ data:",
-          new Date(),
-          data
-        );
-        if (data.message?.sender?.id !== id) {
-          dispatch(addNewChat(data));
-          dispatch(addNewIndication());
-          dispatch(
-            openToast({
-              type: "Message",
-              text: data?.message.text,
-              imageUri: data.imageUri,
-            })
-          );
-        }
-      }
-    });
-    return () => {
-      socket?.off("online");
-      socket?.off("message");
-    };
-  }, [socket]);
+  //   if (socket) {
+  //     socket?.on("newChat", (chatMessages) => {
+  //       console.log(
+  //         "🚀 ~ file: Main.tsx:203 ~ socket?.on ~ chatMessages:",
+  //         chatMessages
+  //       );
+  //       if (chatMessages) {
+  //         if (chatMessages?.isNew) {
+  //           dispatch(
+  //             addToChatList({
+  //               id: chatMessages?.id,
+  //               messages: chatMessages?.messages,
+  //               users: chatMessages?.users,
+  //             })
+  //           );
+  //           dispatch(addNewIndication());
+  //         }
+  //       }
+  //     });
+  //   }
+  //   return () => {
+  //     socket?.off("newChat");
+  //   };
+  // }, [socket]);
+
+  // 🚫 MVP: Removed online status and message handling to eliminate resource leakage
+  // useEffect(() => {
+  //   // 🚫 MVP: Disable Socket.io connections
+  //   if (!isFeatureEnabled("SOCKET_CONNECTIONS")) {
+  //     return;
+  //   }
+
+  //   socket?.on("online", (online) => {
+  //     dispatch(updateOnlineIds({ ids: online }));
+  //   });
+
+  //   socket?.on("message", (data: IMessageSocket) => {
+  //     if (data) {
+  //       console.log(
+  //         "🚀 ~ file: Main.tsx:267 ~ socket?.on ~ data:",
+  //         new Date(),
+  //         data
+  //       );
+  //       if (data.message?.sender?.id !== id) {
+  //         dispatch(addNewChat(data));
+  //         dispatch(addNewIndication());
+  //         dispatch(
+  //           openToast({
+  //             type: "Message",
+  //             text: data?.message.text,
+  //             imageUri: data.imageUri,
+  //           })
+  //         );
+  //       }
+  //     }
+  //   });
+  //   return () => {
+  //     socket?.off("online");
+  //     socket?.off("message");
+  //   };
+  // }, [socket]);
 
   const appState = useRef(AppState.currentState);
 
@@ -303,7 +315,7 @@ export default function Main() {
         nextAppState === "active"
       ) {
         // 🚫 MVP: Disable Socket.io connections
-        if (isFeatureEnabled('SOCKET_CONNECTIONS')) {
+        if (isFeatureEnabled("SOCKET_CONNECTIONS")) {
           socket?.emit("online");
         }
         console.log("App has come to the foreground!");
@@ -314,7 +326,7 @@ export default function Main() {
       console.log("AppState", appState.current);
       if (appState.current === "background") {
         // 🚫 MVP: Disable Socket.io connections
-        if (isFeatureEnabled('SOCKET_CONNECTIONS')) {
+        if (isFeatureEnabled("SOCKET_CONNECTIONS")) {
           socket?.emit("away");
         }
       }
@@ -360,7 +372,7 @@ export default function Main() {
         <Stack.Screen
           name="Main"
           options={{ headerShown: false, title: "Home" }}
-          component={SimplifiedBottomNav}
+          component={BottomTabNavigator}
         />
         <Stack.Screen
           name="Profile"
@@ -491,7 +503,7 @@ export default function Main() {
             //   />
             // ),
             title: "Post",
-      animation:"fade_from_bottom",
+            animation: "fade_from_bottom",
 
             headerTitleStyle: { fontFamily: "uberBold", fontSize: 20, color },
             headerShadowVisible: false,
