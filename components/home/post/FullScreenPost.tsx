@@ -1,44 +1,42 @@
-import { View, Dimensions, Pressable, Text } from "react-native";
+import { View, Text, Pressable, Dimensions } from "react-native";
 
 import ProfileImage from "./components/ProfileImage";
-import NameAndTag from "./components/NameAndTag";
+import NameAndTagFullScreen from "./components/NameAndTagFullScreen";
 import TextPost from "./components/TextPost";
-import PhotoPost from "./components/PhotoPost";
-import VideoPost from "./components/VideoPost";
-import Engagements from "./components/Engagements";
+import PhotoPostFullScreen from "./components/PhotoPostFullScreen";
+import VideoPostForFullScreen from "./components/VideoPostForFullScreen";
+import EngagementsFullScreen from "./components/EngagementsFullScreen";
 import useGetMode from "../../../hooks/GetMode";
 import AudioPost from "./components/AudioPost";
 import { IPostBuilder } from "../../../types/app";
 import { ProfileIcon } from "../../icons";
 import { useNavigation } from "@react-navigation/native";
 import { HomeNavigationProp } from "../../../types/navigation";
-import EngagementsFullScreen from "./components/EngagementsFullScreen";
-import NameAndTagFullScreen from "./components/NameAndTagFullScreen";
-import PhotoPostFullScreen from "./components/PhotoPostFullScreen";
-import { dateFormatted } from "../../../util/date";
-import EngagementsText from "./misc/EngagementText";
+import { dateAgo } from "../../../util/date";
 import { useAppSelector } from "../../../redux/hooks/hooks";
 import LinkPost from "./components/LinkPost";
-let Share: any = null;
-try {
-  Share = require("react-native-share");
-} catch (error) {
-  Share = {
-    open: () => Promise.resolve(),
-    shareSingle: () => Promise.resolve(),
-    isPackageInstalled: () => Promise.resolve(false)
-  };
-}
-let ViewShot: any = null;
-try {
-  ViewShot = require("react-native-view-shot");
-} catch (error) {
-  const { View } = require("react-native");
-  ViewShot = View;
-}
+
+// 🚫 MVP: Mock Share for MVP (sharing functionality disabled)
+const Share = {
+  open: () =>
+    Promise.reject(new Error("Sharing functionality disabled for MVP")),
+  shareSingle: () =>
+    Promise.reject(new Error("Sharing functionality disabled for MVP")),
+  isPackageInstalled: () => Promise.resolve(false),
+};
+
+// 🚫 MVP: Mock ViewShot for MVP (screenshot functionality disabled)
+const ViewShot = View;
+
 import { useRef, useState } from "react";
-import { Image } from "expo-image";
-import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
+import { Button, Menu, Divider, PaperProvider } from "react-native-paper";
+import Animated, {
+  SlideOutRight,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  withTiming,
+} from "react-native-reanimated";
 export default function FullScreenPost({
   imageUri,
   name,
@@ -71,7 +69,7 @@ export default function FullScreenPost({
   const color = isDark ? "#FFFFFF" : "#000000";
   const rColor = isDark ? "#FFFFFF2A" : "#0000001B";
   const user = useAppSelector((state) => state.user.data);
-  const [dateString, timeString] = dateFormatted(new Date(date)).split(",");
+  const [dateString, timeString] = dateAgo(new Date(date)).split(",");
   const [showQ, setShowQ] = useState(false);
   const ref = useRef<any>(null);
 
@@ -182,7 +180,7 @@ export default function FullScreenPost({
               )}
             </View>
             {videoUri && (
-              <VideoPost
+              <VideoPostForFullScreen
                 thumbNail={thumbNail}
                 videoTitle={videoTitle}
                 imageUri={imageUri}
@@ -235,11 +233,24 @@ export default function FullScreenPost({
                 borderBottomColor: "#7a868f",
               }}
             >
-              <EngagementsText engagementNumber={like} engage="Like" />
-              <EngagementsText
-                engagementNumber={comments || 0}
-                engage="Comment"
-              />
+              <Text
+                style={{
+                  color: "#7a868f",
+                  fontFamily: "mulishMedium",
+                  fontSize: 16,
+                }}
+              >
+                {like}
+              </Text>
+              <Text
+                style={{
+                  color: "#7a868f",
+                  fontFamily: "mulishMedium",
+                  fontSize: 14,
+                }}
+              >
+                Likes
+              </Text>
             </View>
             <EngagementsFullScreen
               handleShare={handleShare}
@@ -255,7 +266,7 @@ export default function FullScreenPost({
         {!showQ && (
           <Animated.View
             style={{ position: "absolute", right: 10, top: 10 }}
-            exiting={FadeOut.springify()}
+            exiting={SlideOutRight.springify()}
           >
             <Text style={{ fontFamily: "uberBold", color }}>Qui</Text>
           </Animated.View>

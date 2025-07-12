@@ -1,18 +1,19 @@
-import { View, Text, Pressable, ToastAndroid } from "react-native";
-import React from "react";
+import React, { useState } from "react";
+import { View, Text, Pressable, Alert } from "react-native";
 import { CameraIcon } from "../icons";
-let ImagePicker: any = null;
-try {
-  ImagePicker = require("react-native-image-crop-picker");
-} catch (error) {
-  ImagePicker = {
-    openPicker: () => Promise.reject(new Error("Not available on web")),
-    openCamera: () => Promise.reject(new Error("Not available on web"))
-  };
-}
 import useGetMode from "../../hooks/GetMode";
 import { useAppDispatch } from "../../redux/hooks/hooks";
 import { openToast } from "../../redux/slice/toast/toast";
+
+// 🚫 MVP: Mock ImagePicker for MVP (image crop functionality disabled)
+const ImagePicker = {
+  openPicker: () => Promise.reject(new Error("Image crop functionality disabled for MVP")),
+  openCamera: () => Promise.reject(new Error("Image crop functionality disabled for MVP")),
+  openCropper: () => Promise.reject(new Error("Image crop functionality disabled for MVP")),
+  clean: () => Promise.resolve(),
+  cleanSingle: () => Promise.resolve(),
+};
+
 export default function PickGifButton({
   handleSetPhotoPost,
 }: {
@@ -54,12 +55,10 @@ export default function PickGifButton({
           })
             .then((image) => {
               if (image.size > 1200000 || image.mime !== "image/gif") {
-                ToastAndroid.showWithGravityAndOffset(
+                Alert.alert(
+                  "Error",
                   "Gif of 1MB only!",
-                  ToastAndroid.LONG,
-                  ToastAndroid.TOP,
-                  25,
-                  50
+                  [{ text: "OK" }]
                 );
 
                 return;

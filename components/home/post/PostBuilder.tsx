@@ -15,24 +15,20 @@ import { HomeNavigationProp } from "../../../types/navigation";
 import { dateAgo } from "../../../util/date";
 import { useAppSelector } from "../../../redux/hooks/hooks";
 import LinkPost from "./components/LinkPost";
-let ViewShot: any = null;
-try {
-  ViewShot = require("react-native-view-shot").default;
-} catch (error) {
-  const { View } = require("react-native");
-  ViewShot = View;
-}
+
+// 🚫 MVP: Mock ViewShot for MVP (screenshot functionality disabled)
+const ViewShot = View;
+
+// 🚫 MVP: Mock Share for MVP (sharing functionality disabled)
+const Share = {
+  open: () =>
+    Promise.reject(new Error("Sharing functionality disabled for MVP")),
+  shareSingle: () =>
+    Promise.reject(new Error("Sharing functionality disabled for MVP")),
+  isPackageInstalled: () => Promise.resolve(false),
+};
+
 import { useRef, useState } from "react";
-let Share: any = null;
-try {
-  Share = require("react-native-share");
-} catch (error) {
-  Share = {
-    open: () => Promise.resolve(),
-    shareSingle: () => Promise.resolve(),
-    isPackageInstalled: () => Promise.resolve(false)
-  };
-}
 import { Button, Menu, Divider, PaperProvider } from "react-native-paper";
 import Animated, { SlideOutRight } from "react-native-reanimated";
 export default function PostBuilder({
@@ -59,7 +55,7 @@ export default function PostBuilder({
   thumbNail,
   deletePost,
   photo,
-  idx
+  idx,
 }: IPostBuilder) {
   const width = Dimensions.get("window").width;
   const navigation = useNavigation<HomeNavigationProp>();
@@ -218,7 +214,9 @@ export default function PostBuilder({
                   videoViews={videoViews}
                 />
               )}
-              {audioUri && <AudioPost idx={idx} uri={audioUri} photoUri={imageUri} />}
+              {audioUri && (
+                <AudioPost idx={idx} uri={audioUri} photoUri={imageUri} />
+              )}
               <Engagements
                 title={title}
                 comments={comments}

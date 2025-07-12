@@ -1,16 +1,20 @@
-import { View, Text, Pressable } from "react-native";
-import React from "react";
+import React, { useState } from "react";
+import { View, Text, Pressable, Alert } from "react-native";
 import { CameraIcon } from "../icons";
-let ImagePicker: any = null;
-try {
-  ImagePicker = require("react-native-image-crop-picker");
-} catch (error) {
-  ImagePicker = {
-    openPicker: () => Promise.reject(new Error("Not available on web")),
-    openCamera: () => Promise.reject(new Error("Not available on web"))
-  };
-}
 import useGetMode from "../../hooks/GetMode";
+
+// 🚫 MVP: Mock ImagePicker for MVP (image crop functionality disabled)
+const ImagePicker = {
+  openPicker: () =>
+    Promise.reject(new Error("Image crop functionality disabled for MVP")),
+  openCamera: () =>
+    Promise.reject(new Error("Image crop functionality disabled for MVP")),
+  openCropper: () =>
+    Promise.reject(new Error("Image crop functionality disabled for MVP")),
+  clean: () => Promise.resolve(),
+  cleanSingle: () => Promise.resolve(),
+};
+
 export default function PickImageButton({
   handleSetPhotoPost,
 }: {
@@ -18,7 +22,7 @@ export default function PickImageButton({
 }) {
   const dark = useGetMode();
   const backgroundColor = dark ? "white" : "black";
-  const backgroundColorView =  "#FD5E02" ;
+  const backgroundColorView = "#FD5E02";
   const rippleColor = !dark ? "#ABABAB" : "#55555500";
 
   return (

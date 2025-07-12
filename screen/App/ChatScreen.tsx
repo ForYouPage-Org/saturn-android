@@ -53,6 +53,40 @@ import {
 } from "../../config/featureFlags";
 
 export default function ChatScreen({ navigation, route }: ChatScreenProp) {
+  // 🚫 MVP: Feature flag protection - chat functionality disabled
+  if (!isFeatureEnabled("REAL_TIME_CHAT")) {
+    return (
+      <AnimatedScreen>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
+          <Text style={{ 
+            fontSize: 18, 
+            textAlign: 'center', 
+            color: useGetMode() ? '#FFFFFF' : '#000000',
+            fontFamily: 'mulishBold' 
+          }}>
+            {COMING_SOON_MESSAGE}
+          </Text>
+          <Pressable 
+            style={{ 
+              marginTop: 20, 
+              padding: 15, 
+              backgroundColor: useGetMode() ? '#333' : '#f0f0f0',
+              borderRadius: 10 
+            }}
+            onPress={() => navigation.goBack()}
+          >
+            <Text style={{ 
+              color: useGetMode() ? '#FFFFFF' : '#000000',
+              fontFamily: 'mulish' 
+            }}>
+              Go Back
+            </Text>
+          </Pressable>
+        </View>
+      </AnimatedScreen>
+    );
+  }
+
   const user = useAppSelector((state) => state.user?.data);
 
   const chatState = useAppSelector((state) => state?.chatlist?.data);

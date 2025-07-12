@@ -5,6 +5,9 @@ interface LoginResult {
   status: "success";
   actor: IUSerData;
   token: string;
+  // Legacy support
+  data?: IUSerData;
+  msg?: string;
 }
 
 interface LegacyLoginResult {

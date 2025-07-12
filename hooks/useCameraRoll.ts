@@ -1,24 +1,66 @@
-let CameraRoll: any = null;
-let PhotoIdentifier: any = null;
+import { useState, useEffect } from "react";
 
-try {
-  const cameraRollModule = require("@react-native-camera-roll/camera-roll");
-  CameraRoll = cameraRollModule.CameraRoll;
-  PhotoIdentifier = cameraRollModule.PhotoIdentifier;
-} catch (error) {
-  console.warn('CameraRoll not available, using fallback');
-  CameraRoll = {
-    getPhotos: () => Promise.resolve({ edges: [] }),
-    save: () => Promise.resolve("fallback-uri"),
-  };
-  PhotoIdentifier = {};
-}
-
-export const useCameraRoll = () => {
-  return {
-    getPhotos: CameraRoll.getPhotos,
-    save: CameraRoll.save,
-  };
+// 🚫 MVP: Mock CameraRoll for MVP (camera roll functionality disabled)
+const cameraRollModule = {
+  getPhotos: () =>
+    Promise.reject(new Error("Camera roll functionality disabled for MVP")),
+  save: () =>
+    Promise.reject(new Error("Camera roll functionality disabled for MVP")),
+  saveToCameraRoll: () =>
+    Promise.reject(new Error("Camera roll functionality disabled for MVP")),
+  GroupTypes: {
+    Album: "Album",
+    All: "All",
+    Event: "Event",
+    Faces: "Faces",
+    Library: "Library",
+    PhotoStream: "PhotoStream",
+    SavedPhotos: "SavedPhotos",
+  },
+  MediaType: {
+    photo: "photo",
+    video: "video",
+  },
 };
 
-export { CameraRoll, PhotoIdentifier };
+export interface PhotoIdentifier {
+  node: {
+    id: string;
+    image: {
+      uri: string;
+      width: number;
+      height: number;
+    };
+    timestamp: number;
+    location?: {
+      latitude: number;
+      longitude: number;
+    };
+  };
+}
+
+export const CameraRoll = cameraRollModule;
+
+export const useCameraRoll = () => {
+  const [photos, setPhotos] = useState<PhotoIdentifier[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [hasNextPage, setHasNextPage] = useState(false);
+
+  const getPhotos = async () => {
+    console.log("🚫 Camera roll functionality disabled for MVP");
+    setPhotos([]);
+    setLoading(false);
+    setHasNextPage(false);
+  };
+
+  useEffect(() => {
+    // Don't load photos automatically for MVP
+  }, []);
+
+  return {
+    photos,
+    loading,
+    hasNextPage,
+    getPhotos,
+  };
+};

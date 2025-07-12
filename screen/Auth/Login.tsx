@@ -114,10 +114,16 @@ export default function Login({ navigation }: LoginScreen) {
         .unwrap()
         .then((e) => {
           console.log('[DIAGNOSTIC_ANDROID_LOGIN] Success response received');
-          console.log('[DIAGNOSTIC_ANDROID_LOGIN] Response data:', { hasToken: !!e.token, hasData: !!e.data, msg: e.msg });
+          console.log('[DIAGNOSTIC_ANDROID_LOGIN] Response data:', { hasToken: !!e.token, hasActor: !!e.actor, hasData: !!e.data, msg: e.msg });
+          
+          // Handle both new (actor) and legacy (data) response formats
+          const userData = e.actor || e.data;
+          if (!userData) {
+            throw new Error('No user data in response');
+          }
           
           // Save login data to Redux
-          dispatch(loginSuccess({ token: e.token, data: e.actor }));
+          dispatch(loginSuccess({ token: e.token, data: userData }));
           
           // Navigate to main app
           dispatch(setRoute({ route: "App" }));

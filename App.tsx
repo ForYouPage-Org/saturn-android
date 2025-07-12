@@ -86,15 +86,11 @@ try {
   };
 }
 import { PixelRatio } from "react-native";
-let DeviceInfo: any = null;
-try {
-  DeviceInfo = require("react-native-device-info");
-} catch (error) {
-  DeviceInfo = {
-    getTotalMemorySync: () => 8000000000,
-    getApiLevelSync: () => 34
-  };
-}
+// 🚫 MVP: Mock DeviceInfo for MVP (device-info functionality disabled)
+const DeviceInfo = {
+  getTotalMemorySync: () => 8000000000,
+  getApiLevelSync: () => 34
+};
 import { setHighEnd } from "./redux/slice/prefs";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
