@@ -64,7 +64,7 @@ const BACKGROUND_FETCH_TASK = "background-fetch";
 const Stack = createStackNavigator<RootStackParamList>();
 
 // 🚫 MVP: Disable background processing
-if (isFeatureEnabled('BACKGROUND_PROCESSING')) {
+if (isFeatureEnabled("BACKGROUND_PROCESSING")) {
   TaskManager.defineTask(BACKGROUND_FETCH_TASK, async () => {
     const now = Date.now();
 
@@ -99,13 +99,13 @@ export default function Main() {
 
   useEffect(() => {
     console.log(process.env.EXPO_PUBLIC_PROJECT_ID);
-    
+
     // 🚫 MVP: Disable push notifications
-    if (!isFeatureEnabled('PUSH_NOTIFICATIONS')) {
-      console.log('🚫 Push notifications disabled for MVP');
+    if (!isFeatureEnabled("PUSH_NOTIFICATIONS")) {
+      console.log("🚫 Push notifications disabled for MVP");
       return;
     }
-    
+
     async function registerForPushNotificationsAsync() {
       try {
         let token;
@@ -156,7 +156,10 @@ export default function Main() {
     registerForPushNotificationsAsync()
       .then((e) => {
         console.log("🚀 ~ file: Main.tsx:187 ~ .then ~ e:", e);
-        updateNotificationId({ notificationId: e?.data as string });
+        // 🚫 MVP: Only update notification ID if notifications are enabled
+        if (isFeatureEnabled("PUSH_NOTIFICATIONS") && e?.data) {
+          updateNotificationId({ notificationId: e?.data as string });
+        }
       })
       .catch((e) => {
         console.log(e);
@@ -169,14 +172,14 @@ export default function Main() {
       .catch((e) => {
         console.log(e);
       });
-  }, []);
+  }, [updateNotificationId]);
 
   useEffect(() => {
     // 🚫 MVP: Disable Socket.io connections
-    if (!isFeatureEnabled('SOCKET_CONNECTIONS')) {
+    if (!isFeatureEnabled("SOCKET_CONNECTIONS")) {
       return;
     }
-    
+
     socket?.on("connected", (connected) => {
       dispatch(openToast({ text: "Connected", type: "Success" }));
     });
@@ -187,10 +190,10 @@ export default function Main() {
 
   useEffect(() => {
     // 🚫 MVP: Disable Socket.io connections
-    if (!isFeatureEnabled('SOCKET_CONNECTIONS')) {
+    if (!isFeatureEnabled("SOCKET_CONNECTIONS")) {
       return;
     }
-    
+
     socket?.emit("followedStatus");
     socket?.on("following", (following: number) => {
       if (following) dispatch(updateFollowing({ following }));
@@ -206,10 +209,10 @@ export default function Main() {
 
   useEffect(() => {
     // 🚫 MVP: Disable Socket.io connections
-    if (!isFeatureEnabled('SOCKET_CONNECTIONS')) {
+    if (!isFeatureEnabled("SOCKET_CONNECTIONS")) {
       return;
     }
-    
+
     const rooms: string[] = [];
     for (let i in chatList) {
       rooms.push(chatList[i]?.id);
@@ -223,10 +226,10 @@ export default function Main() {
 
   useEffect(() => {
     // 🚫 MVP: Disable Socket.io connections
-    if (!isFeatureEnabled('SOCKET_CONNECTIONS')) {
+    if (!isFeatureEnabled("SOCKET_CONNECTIONS")) {
       return;
     }
-    
+
     if (socket) {
       socket?.on("newChat", (chatMessages) => {
         console.log(
@@ -254,10 +257,10 @@ export default function Main() {
 
   useEffect(() => {
     // 🚫 MVP: Disable Socket.io connections
-    if (!isFeatureEnabled('SOCKET_CONNECTIONS')) {
+    if (!isFeatureEnabled("SOCKET_CONNECTIONS")) {
       return;
     }
-    
+
     socket?.on("online", (online) => {
       dispatch(updateOnlineIds({ ids: online }));
     });
@@ -303,7 +306,7 @@ export default function Main() {
         nextAppState === "active"
       ) {
         // 🚫 MVP: Disable Socket.io connections
-        if (isFeatureEnabled('SOCKET_CONNECTIONS')) {
+        if (isFeatureEnabled("SOCKET_CONNECTIONS")) {
           socket?.emit("online");
         }
         console.log("App has come to the foreground!");
@@ -314,7 +317,7 @@ export default function Main() {
       console.log("AppState", appState.current);
       if (appState.current === "background") {
         // 🚫 MVP: Disable Socket.io connections
-        if (isFeatureEnabled('SOCKET_CONNECTIONS')) {
+        if (isFeatureEnabled("SOCKET_CONNECTIONS")) {
           socket?.emit("away");
         }
       }
@@ -491,7 +494,7 @@ export default function Main() {
             //   />
             // ),
             title: "Post",
-      animation:"fade_from_bottom",
+            animation: "fade_from_bottom",
 
             headerTitleStyle: { fontFamily: "uberBold", fontSize: 20, color },
             headerShadowVisible: false,

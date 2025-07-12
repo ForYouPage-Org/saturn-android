@@ -12,9 +12,9 @@ import {
 } from "../../../icons";
 import useGetMode from "../../../../hooks/GetMode";
 import {
-  useLazyLikePostQuery,
-  useLazyRepostQuery,
-} from "../../../../redux/api/services";
+  useLikePostMutation,
+  useUnlikePostMutation,
+} from "../../../../redux/api/posts";
 import RepostButton from "./RepostButton";
 
 export default function Engagements({
@@ -39,24 +39,46 @@ export default function Engagements({
   const shareColor = isDark ? "#91EC09" : "#639E0B";
   const [likeAmount, setLikeAmount] = useState(() => like);
   const [clicked, setClicked] = useState(() => isLiked);
-  const [likePost] = useLazyLikePostQuery();
-  const [rePostPost] = useLazyRepostQuery();
+  const [likePost] = useLikePostMutation();
+  const [unlikePost] = useUnlikePostMutation();
 
   const [reposted, setRepost] = useState(() => isReposted);
 
   const handleClicked = (click: boolean) => {
     setClicked(click);
-    likePost({ id });
+
     if (!clicked) {
+      // Like the post
+      likePost({ id })
+        .unwrap()
+        .then((response) => {
+          setLikeAmount(response.likes);
+        })
+        .catch((error) => {
+          // Revert on error
+          setClicked(false);
+          setLikeAmount(like);
+        });
       setLikeAmount(likeAmount + 1);
     } else {
+      // Unlike the post
+      unlikePost({ id })
+        .unwrap()
+        .then((response) => {
+          setLikeAmount(response.likes);
+        })
+        .catch((error) => {
+          // Revert on error
+          setClicked(true);
+          setLikeAmount(like);
+        });
       setLikeAmount(likeAmount - 1);
     }
   };
 
   const handleRepost = (repost: boolean) => {
     setRepost(repost);
-    rePostPost({ id });
+    // Note: Repost functionality not yet implemented in backend
   };
 
   const color = isDark ? "white" : "black";

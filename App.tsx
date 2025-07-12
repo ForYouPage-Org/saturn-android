@@ -99,6 +99,7 @@ import { setHighEnd } from "./redux/slice/prefs";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import SystemNavigationBar from "./utils/systemNavigationBar";
+import { isFeatureEnabled } from "./config/featureFlags";
 
 // Skip enableFreeze in Expo Go as it can cause issues
 try {
@@ -446,26 +447,32 @@ const Navigation = () => {
     jakara: require("./assets/fonts/PlusJakartaSans-Medium.ttf"),
   });
 
-  // SIMPLIFIED: Direct auto-login for MVP testing
+  // 🔧 MVP: Conditional auto-login based on feature flag
   useEffect(() => {
     if (route === "onBoard") {
-      // Skip onboarding and auth - go straight to app
-      const testUserData = {
-        _id: "6872b97082b9e189bf982804",
-        id: "6872b97082b9e189bf982804", 
-        username: "testuser",
-        preferredUsername: "testuser",
-        followers: [],
-        following: [],
-        email: "testuser@example.com",
-        createdAt: "2025-07-12T19:37:20.231Z",
-        updatedAt: "2025-07-12T19:37:20.231Z"
-      };
-      
-      const testToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4NzJiOTcwODJiOWUxODliZjk4MjgwNCIsInVzZXJuYW1lIjoidGVzdHVzZXIiLCJpYXQiOjE3NTIzNTAwMDUsImV4cCI6MTc1MjQzNjQwNX0.Q6Rr56qcCVGdLYUWqdDeKa8d-LYmBzNZbN9Fykdnz9Q";
-      
-      dispatch(loginSuccess({ token: testToken, data: testUserData }));
-      dispatch(setRoute({ route: "App" }));
+      // Check if auto-login is enabled for development
+      if (isFeatureEnabled("DEV_AUTO_LOGIN")) {
+        // Skip onboarding and auth - go straight to app (development only)
+        const testUserData = {
+          _id: "6872b97082b9e189bf982804",
+          id: "6872b97082b9e189bf982804", 
+          username: "testuser",
+          preferredUsername: "testuser",
+          followers: [],
+          following: [],
+          email: "testuser@example.com",
+          createdAt: "2025-07-12T19:37:20.231Z",
+          updatedAt: "2025-07-12T19:37:20.231Z"
+        };
+        
+        const testToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4NzJiOTcwODJiOWUxODliZjk4MjgwNCIsInVzZXJuYW1lIjoidGVzdHVzZXIiLCJpYXQiOjE3NTIzNTAwMDUsImV4cCI6MTc1MjQzNjQwNX0.Q6Rr56qcCVGdLYUWqdDeKa8d-LYmBzNZbN9Fykdnz9Q";
+        
+        dispatch(loginSuccess({ token: testToken, data: testUserData }));
+        dispatch(setRoute({ route: "App" }));
+      } else {
+        // 🚀 MVP Production: Normal flow - go to authentication
+        dispatch(setRoute({ route: "Auth" }));
+      }
     }
   }, [route]);
 

@@ -2,6 +2,7 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { IUSerData } from "../../types/api";
 
 interface LoginResult {
+  status: "success";
   actor: IUSerData;
   token: string;
 }
@@ -57,4 +58,4 @@ export const authApi = createApi({
   }),
 });
 
-export const { useLoginMutation ,useRegisterMutation} = authApi;
+export const { useLoginMutation, useRegisterMutation } = authApi;

@@ -105,11 +105,13 @@ export default function PostContent({ navigation }: PostContentProp) {
     name: string
   ) {
     // 🚫 MVP: Disable audio upload
-    if (!isFeatureEnabled('AUDIO_UPLOAD')) {
-      dispatch(openToast({ text: "Audio upload coming soon! 🎵", type: "Failed" }));
+    if (!isFeatureEnabled("AUDIO_UPLOAD")) {
+      dispatch(
+        openToast({ text: "Audio upload coming soon! 🎵", type: "Failed" })
+      );
       return;
     }
-    
+
     setPostAudio({
       mimeType,
       uri,
@@ -188,10 +190,10 @@ export default function PostContent({ navigation }: PostContentProp) {
 
   useEffect(() => {
     // 🚫 MVP: Disable audio animations
-    if (!isFeatureEnabled('AUDIO_UPLOAD')) {
+    if (!isFeatureEnabled("AUDIO_UPLOAD")) {
       return;
     }
-    
+
     if (postAudio) {
       animationRef.current?.play();
     }
@@ -259,19 +261,39 @@ export default function PostContent({ navigation }: PostContentProp) {
 
     dispatch(openLoadingModal());
 
-    let content = postText || "";
+    // Prepare attachments array for API
+    const attachments = [];
+
     if (photoServer) {
-      content += ` [Image: ${photoServer.uri}]`;
+      attachments.push({
+        type: "image",
+        url: photoServer.uri,
+        width: photoServer.width,
+        height: photoServer.height,
+      });
     }
+
     if (fileToServer) {
       if (postAudio) {
-        content += ` [Audio: ${fileToServer}]`;
+        attachments.push({
+          type: "audio",
+          url: fileToServer,
+        });
       } else if (postPhoto?.mimeType.startsWith("video/")) {
-        content += ` [Video: ${fileToServer}]`;
+        attachments.push({
+          type: "video",
+          url: fileToServer,
+        });
       }
     }
 
-    createPost({ content })
+    const postData = {
+      content: postText || "",
+      attachments: attachments.length > 0 ? attachments : undefined,
+      visibility: "public" as const,
+    };
+
+    createPost(postData)
       .unwrap()
       .then((e) => {
         dispatch(openToast({ text: "Successfully posted", type: "Success" }));
@@ -279,7 +301,8 @@ export default function PostContent({ navigation }: PostContentProp) {
         dispatch(closeLoadingModal());
       })
       .catch((e) => {
-        dispatch(openToast({ text: "Post failed", type: "Failed" }));
+        const errorMessage = e?.data?.error || "Post failed";
+        dispatch(openToast({ text: errorMessage, type: "Failed" }));
         dispatch(closeLoadingModal());
       });
   };
@@ -466,7 +489,7 @@ export default function PostContent({ navigation }: PostContentProp) {
                 <View style={{ flexDirection: "row", gap: 10 }}>
                   <PickImageButton handleSetPhotoPost={handleSetPhotoPost} />
                   {/* 🚫 MVP: Disable video upload */}
-                  {isFeatureEnabled('VIDEO_UPLOAD') && (
+                  {isFeatureEnabled("VIDEO_UPLOAD") && (
                     <PickVideoButton
                       handleSetPhotoPost={handleSetPhotoPost}
                       setProgress={setProgress}
@@ -474,7 +497,7 @@ export default function PostContent({ navigation }: PostContentProp) {
                     />
                   )}
                   {/* 🚫 MVP: Disable audio upload */}
-                  {isFeatureEnabled('AUDIO_UPLOAD') && (
+                  {isFeatureEnabled("AUDIO_UPLOAD") && (
                     <PickAudioButton handleSetAudioPost={handleSetAudioPost} />
                   )}
                 </View>

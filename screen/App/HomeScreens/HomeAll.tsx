@@ -64,7 +64,12 @@ export default function HomeAll() {
 
   const [noMore, setNoMore] = useState(false);
 
-  const { data: feedData, isLoading, error, refetch } = useGetFeedQuery({ page: 1, limit: 20 });
+  const {
+    data: feedData,
+    isLoading,
+    error,
+    refetch,
+  } = useGetFeedQuery({ page: 1, limit: 20 });
   const [refreshing, setRefreshing] = React.useState(false);
   // Feed is automatically loaded by useGetFeedQuery
   const onRefresh = useCallback(() => {
@@ -83,7 +88,7 @@ export default function HomeAll() {
   }, [authId, dispatch, refetch]);
 
   const renderFooter = () => {
-    if (feedData?.pagination?.hasMore === false) {
+    if (feedData?.hasMore === false) {
       return (
         <View
           style={{
@@ -142,23 +147,45 @@ export default function HomeAll() {
   const renderItem = ({ item, index }: { item: any; index: number }) => (
     <PostBuilder
       id={item.id}
-      isReposted={false}
-      date={item.createdAt}
+      isReposted={item.sharedByUser || false}
+      date={item.published} // Changed from createdAt to published
       link={""}
-      comments={item._count?.comments || 0}
-      like={item._count?.likes || 0}
-      isLiked={false}
-      photo={undefined}
-      thumbNail={""}
-      imageUri={item.author?.avatar}
-      name={item.author?.name}
+      comments={item.replyCount || 0} // Changed from _count.comments to replyCount
+      like={item.likes || 0} // Changed from _count.likes to likes
+      isLiked={item.likedByUser || false} // Changed from isLiked to likedByUser
+      photo={
+        item.attachments?.[0]?.type === "image"
+          ? {
+              uri: item.attachments[0].url,
+              width: item.attachments[0].width || 400,
+              height: item.attachments[0].height || 400,
+            }
+          : undefined
+      }
+      thumbNail={
+        item.attachments?.[0]?.type === "video" ? item.attachments[0].url : ""
+      }
+      imageUri={item.author?.iconUrl || ""}
+      name={
+        item.author?.displayName ||
+        item.author?.preferredUsername ||
+        item.author?.username
+      }
       userId={item.author?.id}
       userTag={item.author?.username}
       verified={false}
-      audioUri={undefined}
+      audioUri={
+        item.attachments?.[0]?.type === "audio"
+          ? item.attachments[0].url
+          : undefined
+      }
       photoUri={""}
       videoTitle={undefined}
-      videoUri={undefined}
+      videoUri={
+        item.attachments?.[0]?.type === "video"
+          ? item.attachments[0].url
+          : undefined
+      }
       postText={item.content}
       videoViews={"0"}
       idx={index}
@@ -198,7 +225,7 @@ export default function HomeAll() {
   });
 
   const posts = feedData?.posts || [];
-  
+
   return (
     <View style={{ flex: 1 }}>
       {isLoading && posts.length === 0 ? (

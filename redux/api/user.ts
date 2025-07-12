@@ -17,7 +17,7 @@ interface loginResult {
 export const userApi = createApi({
   reducerPath: "userApi",
   baseQuery: fetchBaseQuery({
-    baseUrl: `${process.env.EXPO_PUBLIC_API_URL}/api/user`,
+    baseUrl: `${process.env.EXPO_PUBLIC_API_URL}/api`,
     prepareHeaders: (headers, { getState }) => {
       const token = (getState() as any).user.token;
       // If we have a token, set it in the header
@@ -29,57 +29,54 @@ export const userApi = createApi({
   }),
   tagTypes: ["user", "guest"],
   endpoints: (builder) => ({
-    getUser: builder.query<{ data: IUSerData }, null>({
-      query: () => "/get-user",
+    getUser: builder.query<{ status: "success" } & IUSerData, null>({
+      query: () => "/auth/me",
       providesTags: ["user"],
       extraOptions: { maxRetries: 2 },
     }),
-    logout: builder.query<{ msg: string }, null>({
-      query: () => "/logout",
-      providesTags: ["user"],
-      extraOptions: { maxRetries: 2 },
-    }),
-    getGuest: builder.query<{ data: IGuestData }, { id: string }>({
-      query: ({ id }) => `/get-guest?id=${id}`,
+    getGuest: builder.query<{ data: IGuestData }, { username: string }>({
+      query: ({ username }) => `/actors/${username}`,
       providesTags: ["guest"],
       keepUnusedDataFor: 10,
     }),
-    getNotifications: builder.query<{ notifications: Notifications[] }, null>({
-      query: () => `/get-notifications`,
+    searchActors: builder.query<
+      {
+        status: "success";
+        data: Array<{
+          id: string;
+          username: string;
+          preferredUsername: string;
+        }>;
+      },
+      { q: string }
+    >({
+      query: ({ q }) => `/actors/search?q=${q}`,
       keepUnusedDataFor: 10,
     }),
     getFollowDetails: builder.query<
       { following: string; followers: string },
       null
     >({
-      query: () => "/get-follows",
+      query: () => "/user/get-follows", // Keep this as fallback until backend implements
       providesTags: ["user"],
       extraOptions: { maxRetries: 2 },
     }),
     tokenValid: builder.query<{ msg: boolean }, null>({
-      query: () => "/token-valid",
+      query: () => "/user/token-valid", // Keep this as fallback until backend implements
       providesTags: ["user"],
       extraOptions: { maxRetries: 0 },
     }),
-    uploadProfilePicture: builder.mutation<
-      { photo: string },
-      { mimeType: string; uri: string }
+    updateActor: builder.mutation<
+      any,
+      { preferredUsername?: string; summary?: string }
     >({
       query: (payload) => {
-        const blob: any = {
-          name: `${payload.uri.split("/").splice(-1)}`,
-          type: payload.mimeType,
-          uri: payload.uri,
-        };
-        const formData = new FormData();
-
-        formData.append("photo", blob);
         return {
-          url: "/update-photo",
-          method: "POST",
-          body: formData,
+          url: "/actors/me", // Assuming this endpoint exists for updating current user
+          method: "PUT",
+          body: payload,
           headers: {
-            "Content-type": "multipart/form-data",
+            "Content-type": "application/json; charset=UTF-8",
           },
         };
       },
@@ -88,43 +85,9 @@ export const userApi = createApi({
     updateNotificationId: builder.mutation<any, { notificationId: string }>({
       query: (payload) => {
         return {
-          url: "/update-notification-id",
+          url: "/user/notification-id", // Keep this as fallback until backend implements
           method: "PUT",
-          body: { notificationId: payload.notificationId },
-          headers: {
-            "Content-type": "application/json; charset=UTF-8",
-          },
-        };
-      },
-    }),
-    getFollowingList: builder.query<
-      FollowingData[],
-      { take: number; skip: number }
-    >({
-      query: ({ take, skip }) => `/get-following?take=${take}&skip=${skip}`,
-      providesTags: ["user"],
-    }),
-    getFollowersList: builder.query<
-      FollowData[],
-      { take: number; skip: number }
-    >({
-      query: ({ take, skip }) => `/get-followers?take=${take}&skip=${skip}`,
-      providesTags: ["user"],
-    }),
-    updateData: builder.mutation<
-      { msg: string },
-      {
-        username?: string;
-        password: string;
-        newPassword?: string;
-        name?: string;
-      }
-    >({
-      query: ({ username, password, newPassword, name }) => {
-        return {
-          url: "/update-data",
-          method: "PUT",
-          body: { username, password, newPassword, name },
+          body: payload,
           headers: {
             "Content-type": "application/json; charset=UTF-8",
           },
@@ -132,26 +95,53 @@ export const userApi = createApi({
       },
       invalidatesTags: ["user"],
     }),
-    deleteAccount: builder.mutation<
-      { msg: string },
-      {
-        username?: string;
-        password: string;
-        newPassword?: string;
-        name?: string;
-      }
-    >({
-      query: ({ password }) => {
+    // 🚫 MVP: Add missing logout functionality
+    logout: builder.query<{ msg: string }, null>({
+      query: () => "/auth/logout", // Keep this as fallback until backend implements
+      providesTags: ["user"],
+    }),
+    // 🚫 MVP: Add missing notifications functionality
+    getNotifications: builder.query<{ notifications: Notifications[] }, null>({
+      query: () => "/notifications", // Keep this as fallback until backend implements
+      providesTags: ["user"],
+    }),
+    // 🚫 MVP: Add missing account deletion functionality
+    deleteAccount: builder.mutation<{ msg: string }, { password: string }>({
+      query: (payload) => {
         return {
-          url: "/delete-account",
+          url: "/auth/delete-account", // Keep this as fallback until backend implements
           method: "DELETE",
-          body: { password },
+          body: payload,
           headers: {
             "Content-type": "application/json; charset=UTF-8",
           },
         };
       },
       invalidatesTags: ["user"],
+    }),
+    // 🚫 MVP: Add missing data update functionality
+    updateData: builder.mutation<any, { [key: string]: any }>({
+      query: (payload) => {
+        return {
+          url: "/user/update-data", // Keep this as fallback until backend implements
+          method: "PUT",
+          body: payload,
+          headers: {
+            "Content-type": "application/json; charset=UTF-8",
+          },
+        };
+      },
+      invalidatesTags: ["user"],
+    }),
+    // 🚫 MVP: Add missing followers list functionality
+    getFollowersList: builder.query<{ followers: any[] }, null>({
+      query: () => "/user/followers", // Keep this as fallback until backend implements
+      providesTags: ["user"],
+    }),
+    // 🚫 MVP: Add missing following list functionality
+    getFollowingList: builder.query<{ following: any[] }, null>({
+      query: () => "/user/following", // Keep this as fallback until backend implements
+      providesTags: ["user"],
     }),
   }),
 });
@@ -161,16 +151,19 @@ export const {
   useTokenValidQuery,
   useLazyGetUserQuery,
   useGetGuestQuery,
-  useLazyGetNotificationsQuery,
   useLazyGetGuestQuery,
-  useGetNotificationsQuery,
-  useUpdateNotificationIdMutation,
-  useUploadProfilePictureMutation,
-  useLazyGetFollowersListQuery,
-  useLazyGetFollowingListQuery,
-  useLazyLogoutQuery,
-  useDeleteAccountMutation,
-  useUpdateDataMutation,
+  useSearchActorsQuery,
+  useLazySearchActorsQuery,
+  useUpdateActorMutation,
   useGetFollowDetailsQuery,
   useLazyGetFollowDetailsQuery,
+  useUpdateNotificationIdMutation,
+  useLazyLogoutQuery,
+  useGetNotificationsQuery,
+  useDeleteAccountMutation,
+  useUpdateDataMutation,
+  useLazyGetFollowersListQuery,
+  useLazyGetFollowingListQuery,
+  useGetFollowersListQuery,
+  useGetFollowingListQuery,
 } = userApi;

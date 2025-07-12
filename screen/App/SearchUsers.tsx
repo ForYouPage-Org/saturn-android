@@ -3,7 +3,7 @@ import { View, Text, Dimensions, FlatList } from "react-native";
 import { useEffect, useLayoutEffect, useState } from "react";
 
 import useGetMode from "../../hooks/GetMode";
-import { useLazySearchPeopleQuery } from "../../redux/api/services";
+import { useLazySearchActorsQuery } from "../../redux/api/user";
 import Animated, {
   FadeInRight,
   FadeInUp,
@@ -29,8 +29,7 @@ export default function SearchUsers({ navigation }: SearchUserProp) {
   const dark = useGetMode();
   const tint = dark ? "dark" : "light";
 
-  const [getPersons, persons] = useLazySearchPeopleQuery();
-
+  const [getPersons, persons] = useLazySearchActorsQuery();
 
   const opacity = useSharedValue(0);
   const animatedStyle = useAnimatedStyle(() => {
@@ -76,7 +75,7 @@ export default function SearchUsers({ navigation }: SearchUserProp) {
           ))}
         </Animated.View>
       )}
-      {persons?.data?.people.length === 0 && !persons?.isLoading && (
+      {persons?.data?.data.length === 0 && !persons?.isLoading && (
         <Animated.View
           entering={FadeInUp.springify()}
           exiting={FadeOutDown.springify()}
@@ -94,14 +93,22 @@ export default function SearchUsers({ navigation }: SearchUserProp) {
       )}
       <FlatList
         keyboardShouldPersistTaps="always"
-        data={persons.data?.people}
+        data={persons.data?.data}
         contentContainerStyle={{
           paddingTop: 10,
           paddingBottom: 100,
           gap: 5,
           paddingHorizontal: 10,
         }}
-        renderItem={({ item }) => <UserContainer {...item} />}
+        renderItem={({ item }) => (
+          <UserContainer
+            id={item.id}
+            userName={item.username}
+            name={item.preferredUsername || item.username}
+            imageUri={undefined} // iconUrl not available in search response
+            isFollowed={false} // Not provided in search response
+          />
+        )}
         keyExtractor={(item) => item.id.toString()}
       />
     </Animated.View>

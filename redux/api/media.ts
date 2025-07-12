@@ -1,17 +1,18 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
 export interface MediaUploadResponse {
+  status: "success";
   id: string;
   url: string;
   type: string;
-  filename: string;
   size: number;
-  createdAt: string;
+  mediaType: string;
+  width?: number;
+  height?: number;
 }
 
-export interface MediaUploadRequest {
-  file: File | FormData;
-  type: "image" | "video" | "audio";
+export interface MediaUploadRequest extends FormData {
+  // FormData with file field
 }
 
 export const mediaApi = createApi({
