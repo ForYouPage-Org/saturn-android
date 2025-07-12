@@ -70,7 +70,15 @@ import Animated, {
 import { useNetInfo } from "@react-native-community/netinfo";
 import { openToast } from "./redux/slice/toast/toast";
 
-import * as Sentry from "@sentry/react-native";
+// 🚫 MVP: Mock Sentry for MVP (error reporting disabled)
+const Sentry = {
+  init: () => {},
+  captureException: () => {},
+  captureMessage: () => {},
+  setUser: () => {},
+  setTag: () => {},
+  setContext: () => {},
+};
 import { useGetFollowDetailsQuery } from "./redux/api/user";
 import * as Device from "expo-device";
 import * as NavigationBar from "expo-navigation-bar";
