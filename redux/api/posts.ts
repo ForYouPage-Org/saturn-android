@@ -82,6 +82,8 @@ export const postsApi = createApi({
       const token = (getState() as any).user.token;
       if (token) {
         headers.set("Authorization", `Bearer ${token}`);
+      } else {
+        console.log("🌐 [DEBUG] No authentication token - login required");
       }
       return headers;
     },
@@ -89,22 +91,36 @@ export const postsApi = createApi({
   tagTypes: ["Post"],
   endpoints: (builder) => ({
     getFeed: builder.query<FeedResponse, { page?: number; limit?: number }>({
-      query: ({ page = 1, limit = 20 } = {}) => ({
-        url: "/posts",
-        method: "GET",
-        params: { page, limit },
-      }),
+      query: ({ page = 1, limit = 20 } = {}) => {
+        console.log("🌐 [DEBUG] getFeed query called with:", { page, limit });
+        console.log(
+          "🌐 [DEBUG] API URL:",
+          `${process.env.EXPO_PUBLIC_API_URL}/api`
+        );
+        return {
+          url: "/posts",
+          method: "GET",
+          params: { page, limit },
+        };
+      },
       providesTags: ["Post"],
     }),
     createPost: builder.mutation<CreatePostResponse, CreatePostRequest>({
-      query: (body) => ({
-        url: "/posts",
-        method: "POST",
-        body,
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }),
+      query: (body) => {
+        console.log("🌐 [DEBUG] createPost mutation called with:", body);
+        console.log(
+          "🌐 [DEBUG] API URL:",
+          `${process.env.EXPO_PUBLIC_API_URL}/api`
+        );
+        return {
+          url: "/posts",
+          method: "POST",
+          body,
+          headers: {
+            "Content-Type": "application/json",
+          },
+        };
+      },
       invalidatesTags: ["Post"],
     }),
     likePost: builder.mutation<Post, { id: string }>({

@@ -40,6 +40,8 @@ import {
   closeLoadingModal,
   openLoadingModal,
 } from "../../redux/slice/modal/loading";
+import { setRoute } from "../../redux/slice/routes";
+import { store } from "../../redux/store";
 import PickVideoButton from "../../components/postContent/PickVideoButton";
 import Animated, {
   FadeIn,
@@ -57,6 +59,8 @@ import { isFeatureEnabled } from "../../config/featureFlags";
 
 const width = Dimensions.get("window").width;
 export default function PostContent({ navigation }: PostContentProp) {
+  console.log("📝 [DEBUG] PostContent component rendered");
+
   const dark = useGetMode();
   const dispatch = useAppDispatch();
   const [photos, setPhotos] = useState<PhotoIdentifier[]>([]);
@@ -73,6 +77,9 @@ export default function PostContent({ navigation }: PostContentProp) {
   } | null>(null);
   const backgroundColor = dark ? "white" : "black";
   const animationRef = useRef<Lottie>(null);
+
+  console.log("📝 [DEBUG] PostContent - dark mode:", dark);
+  console.log("📝 [DEBUG] PostContent - backgroundColor:", backgroundColor);
 
   function handleSetPhotoPost(mimeType: string, uri: string, size: number) {
     setPostPhoto({
@@ -205,6 +212,37 @@ export default function PostContent({ navigation }: PostContentProp) {
 
   const [uploadMedia] = useUploadMediaMutation();
   const [createPost] = useCreatePostMutation();
+  const userState = useAppSelector((state) => state.user);
+
+  console.log("📝 [DEBUG] PostContent - uploadMedia:", typeof uploadMedia);
+  console.log("📝 [DEBUG] PostContent - createPost:", typeof createPost);
+  console.log(
+    "📝 [DEBUG] PostContent - API URL:",
+    process.env.EXPO_PUBLIC_API_URL
+  );
+  console.log("📝 [DEBUG] PostContent - Full user state:", userState);
+  console.log(
+    "📝 [DEBUG] PostContent - Token:",
+    userState.token ? "EXISTS" : "NULL"
+  );
+  console.log(
+    "📝 [DEBUG] PostContent - User data:",
+    userState.data ? "EXISTS" : "NULL"
+  );
+  console.log(
+    "📝 [DEBUG] PostContent - User auth state:",
+    userState.token ? "AUTHENTICATED" : "NOT_AUTHENTICATED"
+  );
+
+  // Monitor auth state changes
+  useEffect(() => {
+    console.log("📝 [DEBUG] PostContent - Auth state changed:", {
+      hasToken: !!userState.token,
+      hasData: !!userState.data,
+      loading: userState.loading,
+    });
+  }, [userState.token, userState.data, userState.loading]);
+
   useEffect(() => {
     if (postPhoto || postAudio) {
       setDone(false);
@@ -250,21 +288,53 @@ export default function PostContent({ navigation }: PostContentProp) {
   };
 
   const handlePostContent = () => {
+    console.log("📝 [DEBUG] PostContent.handlePostContent called!");
+    console.log("📝 [DEBUG] postText:", postText);
+    console.log("📝 [DEBUG] postPhoto:", postPhoto);
+    console.log("📝 [DEBUG] postAudio:", postAudio);
+    console.log("📝 [DEBUG] photoServer:", photoServer);
+    console.log("📝 [DEBUG] fileToServer:", fileToServer);
+    console.log("📝 [DEBUG] createPost function:", typeof createPost);
+
+    // Check if user is authenticated - get fresh state from store
+    const currentUserState = store.getState().user;
+
+    console.log(
+      "📝 [DEBUG] Current user state at post time:",
+      currentUserState
+    );
+    console.log(
+      "📝 [DEBUG] Current token status:",
+      currentUserState.token ? "EXISTS" : "NULL"
+    );
+
+    if (!currentUserState.token) {
+      console.log("📝 [DEBUG] User not authenticated, showing login prompt");
+      dispatch(
+        openToast({ text: "Please log in to create posts", type: "Failed" })
+      );
+      dispatch(setRoute({ route: "Auth" }));
+      return;
+    }
+
     Keyboard.dismiss();
 
     if (!postText && !postPhoto && !postAudio) {
+      console.log("📝 [DEBUG] No content to post, showing toast");
       dispatch(
         openToast({ text: "Please add content to your post", type: "Failed" })
       );
       return;
     }
 
+    console.log("📝 [DEBUG] Opening loading modal...");
     dispatch(openLoadingModal());
 
     // Prepare attachments array for API
     const attachments = [];
 
     if (photoServer) {
+      console.log("📝 [DEBUG] Adding photo attachment:", photoServer);
       attachments.push({
         type: "image",
         url: photoServer.uri,
@@ -275,11 +345,13 @@ export default function PostContent({ navigation }: PostContentProp) {
 
     if (fileToServer) {
       if (postAudio) {
+        console.log("📝 [DEBUG] Adding audio attachment:", fileToServer);
         attachments.push({
           type: "audio",
           url: fileToServer,
         });
       } else if (postPhoto?.mimeType.startsWith("video/")) {
+        console.log("📝 [DEBUG] Adding video attachment:", fileToServer);
         attachments.push({
           type: "video",
           url: fileToServer,
@@ -293,18 +365,29 @@ export default function PostContent({ navigation }: PostContentProp) {
       visibility: "public" as const,
     };
 
-    createPost(postData)
-      .unwrap()
-      .then((e) => {
-        dispatch(openToast({ text: "Successfully posted", type: "Success" }));
-        navigation.pop();
-        dispatch(closeLoadingModal());
-      })
-      .catch((e) => {
-        const errorMessage = e?.data?.error || "Post failed";
-        dispatch(openToast({ text: errorMessage, type: "Failed" }));
-        dispatch(closeLoadingModal());
-      });
+    console.log("📝 [DEBUG] Final post data:", postData);
+    console.log("📝 [DEBUG] About to call createPost...");
+
+    try {
+      createPost(postData)
+        .unwrap()
+        .then((e) => {
+          console.log("📝 [DEBUG] createPost success:", e);
+          dispatch(openToast({ text: "Successfully posted", type: "Success" }));
+          navigation.pop();
+          dispatch(closeLoadingModal());
+        })
+        .catch((e) => {
+          console.error("📝 [DEBUG] createPost error:", e);
+          const errorMessage = e?.data?.error || "Post failed";
+          dispatch(openToast({ text: errorMessage, type: "Failed" }));
+          dispatch(closeLoadingModal());
+        });
+    } catch (error) {
+      console.error("📝 [DEBUG] Exception in createPost:", error);
+      dispatch(openToast({ text: "Post failed - exception", type: "Failed" }));
+      dispatch(closeLoadingModal());
+    }
   };
   const [progress, setProgress] = useState(0);
   console.log(

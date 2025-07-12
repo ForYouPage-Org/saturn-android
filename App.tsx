@@ -345,27 +345,14 @@ function AnimatedSplashScreen({ children }: { children: ReactNode }) {
                 {
                   fontFamily: "uberBold",
                   fontSize: 110,
-                  paddingLeft: 60,
+                  paddingLeft: 0,
                   textAlign: "center",
                   color,
                 },
                 animatedStyles,
               ]}
             >
-              Q
-            </Animated.Text>
-            <Animated.Text
-              style={[
-                {
-                  fontFamily: "uberBold",
-                  fontSize: 110,
-                  color,
-                  textAlign: "center",
-                },
-                animatedStylesK,
-              ]}
-            >
-              ui
+              Saturn
             </Animated.Text>
           </Animated.View>
           <Animated.View
@@ -386,7 +373,7 @@ function AnimatedSplashScreen({ children }: { children: ReactNode }) {
                 fontSize: 14,
               }}
             >
-              🌐 www.isaacojo.me
+              🪐 saturn.foryoupage.org
             </Text>
           </Animated.View>
         </Animated.View>
@@ -558,7 +545,7 @@ const Navigation = () => {
   }
 
   const linking = {
-    prefixes: ["https://qui.ojoisaac.me", "qui-ojo://"],
+    prefixes: ["https://saturn.foryoupage.org", "saturn://"],
     config: {
       screens: {
         Main: "/",

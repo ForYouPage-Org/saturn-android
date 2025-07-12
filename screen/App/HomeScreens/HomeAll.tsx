@@ -48,11 +48,18 @@ import { DrawerHomeProp, HomeProp } from "../../../types/navigation";
 import storage from "../../../redux/storage";
 import Robot from "../../../components/home/post/misc/Robot";
 import { setPlayingIds } from "../../../redux/slice/post/audio";
+import { setRoute } from "../../../redux/slice/routes";
 
 export default function HomeAll() {
   const dark = useGetMode();
   const dispatch = useAppDispatch();
   const authId = useAppSelector((state) => state.user.data?.id);
+  const userToken = useAppSelector((state) => state.user.token);
+  const fullUserState = useAppSelector((state) => state.user);
+
+  console.log("🏠 [DEBUG] HomeAll - Full user state:", fullUserState);
+  console.log("🏠 [DEBUG] HomeAll - authId:", authId);
+  console.log("🏠 [DEBUG] HomeAll - userToken:", userToken ? "EXISTS" : "NULL");
 
   const isDark = dark;
   const color = isDark ? "white" : "black";
@@ -70,6 +77,12 @@ export default function HomeAll() {
     error,
     refetch,
   } = useGetFeedQuery({ page: 1, limit: 20 });
+
+  console.log("🏠 [DEBUG] useGetFeedQuery state:");
+  console.log("🏠 [DEBUG] - isLoading:", isLoading);
+  console.log("🏠 [DEBUG] - error:", error);
+  console.log("🏠 [DEBUG] - feedData:", feedData);
+  console.log("🏠 [DEBUG] - refetch function:", typeof refetch);
   const [refreshing, setRefreshing] = React.useState(false);
   // Feed is automatically loaded by useGetFeedQuery
   const onRefresh = useCallback(() => {
@@ -139,7 +152,26 @@ export default function HomeAll() {
     // Pagination can be implemented later
   };
   const handleRefetch = () => {
-    refetch();
+    console.log("🔄 [DEBUG] HomeAll.handleRefetch called!");
+    console.log("🔄 [DEBUG] refetch function:", typeof refetch);
+    console.log("🔄 [DEBUG] authId:", authId);
+    console.log("🔄 [DEBUG] About to call refetch...");
+    try {
+      const result = refetch();
+      console.log("🔄 [DEBUG] refetch() returned:", result);
+      console.log("🔄 [DEBUG] refetch() type:", typeof result);
+      if (result && typeof result.then === "function") {
+        result
+          .then((data) => {
+            console.log("🔄 [DEBUG] refetch() resolved with:", data);
+          })
+          .catch((error) => {
+            console.error("🔄 [DEBUG] refetch() rejected with:", error);
+          });
+      }
+    } catch (error) {
+      console.error("🔄 [DEBUG] Error calling refetch:", error);
+    }
   };
 
   const [indexInView, setIndexInView] = useState<Array<number | null>>([]);
@@ -226,34 +258,114 @@ export default function HomeAll() {
 
   const posts = feedData?.posts || [];
 
+  console.log("🏠 [DEBUG] HomeAll render - isLoading:", isLoading);
+  console.log("🏠 [DEBUG] HomeAll render - posts.length:", posts.length);
+  console.log("🏠 [DEBUG] HomeAll render - feedData:", feedData);
+  console.log("🏠 [DEBUG] HomeAll render - error:", error);
+  console.log("🏠 [DEBUG] HomeAll render - authId:", authId);
+
   return (
     <View style={{ flex: 1 }}>
       {isLoading && posts.length === 0 ? (
-        <SkeletonGroupPost />
+        <>
+          {console.log("🏠 [DEBUG] Rendering SkeletonGroupPost")}
+          <SkeletonGroupPost />
+        </>
+      ) : error && error.status === 401 ? (
+        <>
+          {console.log(
+            "🏠 [DEBUG] Rendering login prompt - user not authenticated"
+          )}
+          <View
+            style={{
+              flex: 1,
+              justifyContent: "center",
+              alignItems: "center",
+              paddingHorizontal: 20,
+            }}
+          >
+            <Text
+              style={{
+                color,
+                fontSize: 18,
+                fontFamily: "mulishBold",
+                textAlign: "center",
+                marginBottom: 10,
+              }}
+            >
+              Welcome to Saturn! 🪐
+            </Text>
+            <Text
+              style={{
+                color,
+                fontSize: 14,
+                fontFamily: "mulish",
+                textAlign: "center",
+                marginBottom: 20,
+                opacity: 0.7,
+              }}
+            >
+              Please log in to see posts and connect with others
+            </Text>
+            <Pressable
+              onPress={() => {
+                console.log("🔐 [DEBUG] Login button pressed, routing to Auth");
+                dispatch(setRoute({ route: "Auth" }));
+              }}
+              style={{
+                backgroundColor: color,
+                paddingHorizontal: 30,
+                paddingVertical: 12,
+                borderRadius: 25,
+                alignItems: "center",
+              }}
+            >
+              <Text
+                style={{
+                  color: !dark ? "white" : "black",
+                  fontSize: 16,
+                  fontFamily: "mulishBold",
+                }}
+              >
+                Log In
+              </Text>
+            </Pressable>
+          </View>
+        </>
       ) : posts.length === 0 ? (
-        <EmptyList handleRefetch={handleRefetch} />
+        <>
+          {console.log("🏠 [DEBUG] Rendering EmptyList with handleRefetch")}
+          <EmptyList handleRefetch={handleRefetch} />
+        </>
       ) : (
-        <Animated.View style={{ flex: 1 }}>
-          <FlashList
-            data={posts}
-            decelerationRate={0.991}
-            estimatedItemSize={100}
-            ListFooterComponent={renderFooter}
-            refreshControl={
-              <RefreshControl
-                refreshing={refreshing}
-                onRefresh={onRefresh}
-                colors={["red", "blue"]}
-              />
-            }
-            keyExtractor={keyExtractor}
-            estimatedListSize={{ width: width, height: height }}
-            onEndReachedThreshold={0.3}
-            onEndReached={fetchMoreData}
-            renderItem={renderItem}
-            contentContainerStyle={{ paddingTop: 100, paddingBottom: 100 }}
-          />
-        </Animated.View>
+        <>
+          {console.log(
+            "🏠 [DEBUG] Rendering FlashList with",
+            posts.length,
+            "posts"
+          )}
+          <Animated.View style={{ flex: 1 }}>
+            <FlashList
+              data={posts}
+              decelerationRate={0.991}
+              estimatedItemSize={100}
+              ListFooterComponent={renderFooter}
+              refreshControl={
+                <RefreshControl
+                  refreshing={refreshing}
+                  onRefresh={onRefresh}
+                  colors={["red", "blue"]}
+                />
+              }
+              keyExtractor={keyExtractor}
+              estimatedListSize={{ width: width, height: height }}
+              onEndReachedThreshold={0.3}
+              onEndReached={fetchMoreData}
+              renderItem={renderItem}
+              contentContainerStyle={{ paddingTop: 100, paddingBottom: 100 }}
+            />
+          </Animated.View>
+        </>
       )}
       <Fab item={<AddIcon size={30} color={color} />} />
     </View>

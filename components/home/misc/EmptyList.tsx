@@ -7,11 +7,19 @@ import { ReloadIcon } from "../../icons";
 import { useLazyGetAllPostsQuery } from "../../../redux/api/services";
 
 export default function EmptyList({handleRefetch}:{handleRefetch:()=>void}) {
+  console.log("🔄 [DEBUG] EmptyList component rendered");
+  console.log("🔄 [DEBUG] handleRefetch prop:", typeof handleRefetch);
+  
   const dark = useGetMode();
   const isDark = dark;
   const [getPosts] = useLazyGetAllPostsQuery();
   const color = isDark ? "white" : "black";
   const backgroundColor = !isDark ? "#FFFFFFD2" : "#0000008F";
+  
+  console.log("🔄 [DEBUG] EmptyList - dark mode:", isDark);
+  console.log("🔄 [DEBUG] EmptyList - color:", color);
+  console.log("🔄 [DEBUG] EmptyList - backgroundColor:", backgroundColor);
+  
   return (
     <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
       <Animated.View
@@ -39,7 +47,23 @@ export default function EmptyList({handleRefetch}:{handleRefetch:()=>void}) {
           }}
         >
           <Pressable
-            onPress={handleRefetch}
+            onPress={() => {
+              console.log("🔄 [DEBUG] EmptyList refresh button pressed!");
+              console.log("🔄 [DEBUG] handleRefetch function:", typeof handleRefetch);
+              console.log("🔄 [DEBUG] About to call handleRefetch...");
+              try {
+                handleRefetch();
+                console.log("🔄 [DEBUG] handleRefetch called successfully");
+              } catch (error) {
+                console.error("🔄 [DEBUG] Error calling handleRefetch:", error);
+              }
+            }}
+            onPressIn={() => {
+              console.log("🔄 [DEBUG] Refresh button press detected (onPressIn)");
+            }}
+            onPressOut={() => {
+              console.log("🔄 [DEBUG] Refresh button press released (onPressOut)");
+            }}
             android_ripple={{ color }}
             style={{
               backgroundColor,
