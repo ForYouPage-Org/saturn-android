@@ -9,7 +9,7 @@ import React, { useEffect, useLayoutEffect, useState } from "react";
 import AnimatedScreen from "../../components/global/AnimatedScreen";
 import VideoPostFullScreen from "../../components/home/post/components/VideoPostForFullScreen";
 import { VideoFullScreen } from "../../types/navigation";
-import { AnimatedCircularProgress } from "react-native-circular-progress";
+import * as Progress from "react-native-progress";
 
 import { StatusBar } from "expo-status-bar";
 
@@ -154,14 +154,14 @@ export default function VideoFull({ navigation, route }: VideoFullScreen) {
                   backgroundColor: "#000000CA",
                 }}
               >
-                <AnimatedCircularProgress
+                <Progress.Circle
                   size={80}
-                  width={8}
-                  fill={(progress?.received / progress.total) * 100}
-                  tintColor="#FFFFFF"
-                  onAnimationComplete={() => console.log("onAnimationComplete")}
-                  backgroundColor="#D1D1D1"
-                  dashedBackground={{ width: 2, gap: 2 }}
+                  progress={(progress?.received / progress.total) || 0}
+                  color="#FFFFFF"
+                  unfilledColor="#D1D1D1"
+                  borderWidth={0}
+                  thickness={8}
+                  showsText={false}
                 />
               </Animated.View>
               <Animated.View

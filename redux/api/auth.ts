@@ -2,6 +2,7 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { IUSerData } from "../../types/api";
 
 interface LoginResult {
+  status: "success";
   actor: IUSerData;
   token: string;
 }
