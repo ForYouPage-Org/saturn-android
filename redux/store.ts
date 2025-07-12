@@ -35,7 +35,7 @@ import followedPost from "./slice/post/followed";
 import { chatApi } from "./api/chat";
 import online from "./slice/chat/online";
 import currentPage from "./slice/currentPage";
-import audio from "./slice/post/audio"
+import audio from "./slice/post/audio";
 const persistConfig: PersistConfig<
   CombinedState<{
     routes: Route;
@@ -65,7 +65,7 @@ const persistConfig: PersistConfig<
 > = {
   key: "root",
   storage: reduxStorage,
-  whitelist: ["routes", "prefs", "user"],
+  whitelist: ["prefs", "user"], // 🔒 SECURITY FIX: Remove 'routes' to prevent auth bypass
 };
 
 const reducer = combineReducers({

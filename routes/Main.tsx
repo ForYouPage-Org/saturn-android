@@ -60,6 +60,7 @@ import FollowingFollowers from "../screen/App/FollowingFollowers";
 import EditProfile from "../screen/App/EditProfile";
 import ChangeData from "../screen/App/ChangeData";
 import { createStackNavigator } from "@react-navigation/stack";
+// 🔒 SECURITY: Authentication guard imports removed - handled by App.tsx
 const BACKGROUND_FETCH_TASK = "background-fetch";
 const Stack = createStackNavigator<RootStackParamList>();
 
@@ -78,6 +79,8 @@ if (isFeatureEnabled("BACKGROUND_PROCESSING")) {
 }
 
 export default function Main() {
+  // Move ALL hook calls to the top to comply with Rules of Hooks
+  const dispatch = useAppDispatch(); // Still needed for other functionality
   const [updateNotificationId] = useUpdateNotificationIdMutation();
   const chatList = useAppSelector((state) => state?.chatlist?.data);
   const id = useAppSelector((state) => state.user?.data?.id);
@@ -86,11 +89,34 @@ export default function Main() {
   const tint = isDark ? "dark" : "light";
   const backgroundColor = isDark ? "black" : "white";
   const color = !isDark ? "black" : "white";
-  const dispatch = useAppDispatch();
   const socket = useSocket();
   const borderColor = isDark ? "#FFFFFF7D" : "#4545452D";
   const [getAllChats] = useLazyGetAllChatsQuery();
+
+  // 🔒 CRITICAL: Move these hooks to top - they were being called after conditional return
+  const isHighEndDevice = useAppSelector((state) => state?.prefs?.isHighEnd);
+  const bottomSheetModalRef = useRef<BottomSheetModal>(null);
+  const bottomSheetModal = useAppSelector((state) => state?.bottomSheet);
+  const appState = useRef(AppState.currentState);
+  const [appStateVisible, setAppStateVisible] = useState(appState.current);
+
+  // Move all useCallback hooks to top
+  const handlePresentModalPress = useCallback(() => {
+    bottomSheetModalRef.current?.present();
+  }, []);
+
+  const handleDismissModalPress = useCallback(() => {
+    bottomSheetModalRef.current?.dismiss();
+  }, []);
+
+  const snapPoints = useMemo(() => ["25%", "50%", "85%"], []);
+
+  // Call useGetUserQuery hook at the top
   useGetUserQuery(null);
+
+  // 🔒 SECURITY: Authentication guard removed - handled by App.tsx to prevent race conditions
+
+  // Move other useEffect hooks here as well
   useEffect(() => {
     getAllChats(null)
       .then((e) => {})
@@ -291,9 +317,6 @@ export default function Main() {
     };
   }, [socket]);
 
-  const appState = useRef(AppState.currentState);
-
-  const [appStateVisible, setAppStateVisible] = useState(appState.current);
   console.log(
     "🚀 ~ file: Main.tsx:159 ~ Main ~ appStateVisible:",
     appStateVisible
@@ -326,35 +349,56 @@ export default function Main() {
       subscription.remove();
     };
   }, []);
-  const isHighEndDevice = useAppSelector((state) => state?.prefs?.isHighEnd);
-  const bottomSheetModalRef = useRef<BottomSheetModal>(null);
 
-  // variables
-  const snapPoints = useMemo(() => ["25%", "50%"], []);
+  // Return loading state if authentication is being verified - AFTER all hooks
+  if (!userState.token || !userState.data) {
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <Text>Checking authentication...</Text>
+      </View>
+    );
+  }
 
-  // callbacks
-  const handlePresentModalPress = useCallback(() => {
-    bottomSheetModalRef.current?.present();
-  }, []);
-  const handleSheetChanges = useCallback((index: number) => {
-    console.log("handleSheetChanges", index);
-  }, []);
-  useEffect(() => {
-    handlePresentModalPress();
-  }, []);
+  // 🚫 MVP: Disable background processing
+  if (isFeatureEnabled("BACKGROUND_PROCESSING")) {
+    async function registerBackgroundFetchAsync() {
+      return BackgroundFetch.registerTaskAsync(BACKGROUND_FETCH_TASK, {
+        minimumInterval: 15 * 60 * 1000, // 15 minutes
+        stopOnTerminate: false, // android only,
+        startOnBoot: true, // android only
+      });
+    }
+  }
+
   return (
     <BottomSheetModalProvider>
-      {/* <BottomSheetModal
-          ref={bottomSheetModalRef}
-          index={1}
-          snapPoints={snapPoints}
-          onChange={handleSheetChanges}
+      <BottomSheetModal
+        ref={bottomSheetModalRef}
+        index={1}
+        snapPoints={snapPoints}
+        enablePanDownToClose={true}
+        handleIndicatorStyle={{
+          backgroundColor: !isDark ? "#2F2F2F" : "#F8F8F8",
+        }}
+        backgroundStyle={{
+          backgroundColor: !isHighEndDevice ? backgroundColor : "transparent",
+        }}
+        style={{
+          backgroundColor: !isHighEndDevice ? backgroundColor : "transparent",
+        }}
+      >
+        <BottomSheetView
+          style={{
+            flex: 1,
+            backgroundColor: !isHighEndDevice ? backgroundColor : "transparent",
+          }}
         >
-          <BottomSheetView style={styles.contentContainer}>
-            <Text>Awesome 🎉</Text>
-          </BottomSheetView>
-        </BottomSheetModal> */}
-      <BottomSheetContainer />
+          <BottomSheetContainer
+            onDismiss={handleDismissModalPress}
+            onPress={handlePresentModalPress}
+          />
+        </BottomSheetView>
+      </BottomSheetModal>
       <Stack.Navigator
         screenOptions={{
           contentStyle: { backgroundColor },

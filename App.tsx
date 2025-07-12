@@ -453,9 +453,17 @@ const Navigation = () => {
 
   // 🔧 MVP: Authentication flow - check persisted data first, then route appropriately
   const userState = useAppSelector((state) => state.user);
+
+  // 🔒 SECURITY FIX: Authentication initialization - run only once on app start
   useEffect(() => {
     const initializeAuth = async () => {
       console.log("🔍 Initializing authentication...");
+      console.log("🔍 Current route:", route);
+      console.log("🔍 User state:", {
+        hasToken: !!userState.token,
+        hasData: !!userState.data,
+        loading: userState.loading,
+      });
 
       // Check if we have persisted user data
       if (userState.token && userState.data) {
@@ -511,11 +519,11 @@ const Navigation = () => {
       }
     };
 
-    // Only run auth initialization if we're on the onBoard route (initial state)
+    // Only run authentication initialization when route is "onBoard"
     if (route === "onBoard") {
       initializeAuth();
     }
-  }, [route, userState.token, userState.data]);
+  }, [route]); // 🔒 SECURITY FIX: Remove userState dependencies to prevent race condition
 
   const renderRoute = () => {
     if (route === "onBoard") {
