@@ -18,14 +18,14 @@ import Animated, {
 } from "react-native-reanimated";
 import useGetMode from "../../../../hooks/GetMode";
 import LikeLottie from "../misc/Robot";
-let Lottie: any = null;
-try {
-  Lottie = require("lottie-react-native").default;
-} catch (error) {
-  const { View } = require("react-native");
-  Lottie = View;
-}
-import { HeartUnfocused, HeartsFocused, Repost, RepostUnFocused } from "../../../icons";
+// 🚫 MVP: Mock Lottie for MVP (lottie animations disabled)
+const Lottie = View;
+import {
+  HeartUnfocused,
+  HeartsFocused,
+  Repost,
+  RepostUnFocused,
+} from "../../../icons";
 import MaterialIcons from "@expo/vector-icons/MaterialCommunityIcons";
 export default function RepostButton({
   isPosted,
@@ -43,7 +43,6 @@ export default function RepostButton({
   const isDark = dark;
   const color = isDark ? "white" : "black";
   const rColor = isDark ? "#75B8C8" : "#11262C";
-  
 
   const reposted = useSharedValue(isPosted ? 1 : 0);
 
@@ -102,7 +101,6 @@ export default function RepostButton({
             </>
           }
         </View>
-       
       </Pressable>
     </View>
   );

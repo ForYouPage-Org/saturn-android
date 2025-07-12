@@ -22,13 +22,8 @@ import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import PickImageButton from "../../components/postContent/PickImageButton";
 import VideoTextArea from "../../components/postContent/VideoTextArea";
 import RingAudio from "../../components/home/post/components/RingAudio";
-let Lottie: any = null;
-try {
-  Lottie = require("lottie-react-native").default;
-} catch (error) {
-  const { View } = require("react-native");
-  Lottie = View;
-}
+// 🚫 MVP: Mock Lottie for MVP (lottie animations disabled)
+const Lottie = View;
 import PickAudioButton from "../../components/postContent/PickAudioButton";
 import axios from "axios";
 import { useAppDispatch, useAppSelector } from "../../redux/hooks/hooks";
