@@ -25,7 +25,7 @@ export const FEATURE_FLAGS = {
   BEAUTIFUL_ANIMATIONS: true, // Keep all smooth animations
 
   // 🔧 DEVELOPMENT FLAGS
-  DEV_AUTO_LOGIN: false, // Skip auth for testing - DISABLED FOR MVP PRODUCTION
+  DEV_AUTO_LOGIN: true, // Skip auth for testing - ENABLED FOR DEBUGGING
   DEV_MOCK_DATA: true, // Use mock data where needed
   DEV_CONSOLE_LOGS: __DEV__, // Console logs only in development
 };

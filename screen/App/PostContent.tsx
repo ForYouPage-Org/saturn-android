@@ -232,17 +232,18 @@ export default function PostContent({ navigation }: PostContentProp) {
     process.env.EXPO_PUBLIC_API_URL
   );
   console.log("📝 [DEBUG] PostContent - Full user state:", userState);
+  console.log("📝 [DEBUG] PostContent - Full Redux state:", store.getState());
   console.log(
     "📝 [DEBUG] PostContent - Token:",
-    userState.token ? "EXISTS" : "NULL"
+    userState?.token ? "EXISTS" : "NULL"
   );
   console.log(
     "📝 [DEBUG] PostContent - User data:",
-    userState.data ? "EXISTS" : "NULL"
+    userState?.data ? "EXISTS" : "NULL"
   );
   console.log(
     "📝 [DEBUG] PostContent - User auth state:",
-    userState.token ? "AUTHENTICATED" : "NOT_AUTHENTICATED"
+    userState?.token ? "AUTHENTICATED" : "NOT_AUTHENTICATED"
   );
   console.log(
     "📝 [DEBUG] PostContent - State rehydrated:",
@@ -276,14 +277,41 @@ export default function PostContent({ navigation }: PostContentProp) {
 
   // Monitor auth state changes
   useEffect(() => {
+    console.log(
+      "📝 [DEBUG] PostContent - Component mounted, checking auth state"
+    );
+    const fullState = store.getState();
+    console.log(
+      "📝 [DEBUG] PostContent - Full state from store:",
+      fullState.user
+    );
+
     if (userState) {
       console.log("📝 [DEBUG] PostContent - Auth state changed:", {
         hasToken: !!userState.token,
         hasData: !!userState.data,
         loading: userState.loading,
       });
+    } else {
+      console.log("📝 [DEBUG] PostContent - userState is null/undefined");
     }
   }, [userState]);
+
+  // Check auth state on mount
+  useEffect(() => {
+    console.log(
+      "📝 [DEBUG] PostContent - Component mounted, initial auth check"
+    );
+    const storeState = store.getState();
+    console.log(
+      "📝 [DEBUG] PostContent - Store user state on mount:",
+      storeState.user
+    );
+    console.log(
+      "📝 [DEBUG] PostContent - Selector user state on mount:",
+      userState
+    );
+  }, []);
 
   useEffect(() => {
     if (postPhoto || postAudio) {
@@ -347,10 +375,10 @@ export default function PostContent({ navigation }: PostContentProp) {
     );
     console.log(
       "📝 [DEBUG] Current token status:",
-      currentUserState.token ? "EXISTS" : "NULL"
+      currentUserState?.token ? "EXISTS" : "NULL"
     );
 
-    if (!currentUserState.token) {
+    if (!currentUserState?.token) {
       console.log("📝 [DEBUG] User not authenticated, showing login prompt");
       dispatch(
         openToast({ text: "Please log in to create posts", type: "Failed" })
