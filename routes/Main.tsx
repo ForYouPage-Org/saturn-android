@@ -240,8 +240,12 @@ export default function Main() {
     }
 
     const rooms: string[] = [];
-    for (let i in chatList) {
-      rooms.push(chatList[i]?.id);
+    if (chatList && Array.isArray(chatList)) {
+      for (let i = 0; i < chatList.length; i++) {
+        if (chatList[i]?.id) {
+          rooms.push(chatList[i].id);
+        }
+      }
     }
     socket?.emit("chat", rooms);
 
@@ -386,15 +390,12 @@ export default function Main() {
             backgroundColor: !isHighEndDevice ? backgroundColor : "transparent",
           }}
         >
-          <BottomSheetContainer
-            onDismiss={handleDismissModalPress}
-            onPress={handlePresentModalPress}
-          />
+          <BottomSheetContainer />
         </BottomSheetView>
       </BottomSheetModal>
       <Stack.Navigator
         screenOptions={{
-          contentStyle: { backgroundColor },
+          cardStyle: { backgroundColor },
         }}
       >
         <Stack.Screen
@@ -503,7 +504,7 @@ export default function Main() {
           name="VideoFullScreen"
           options={{
             title: "",
-            contentStyle: { backgroundColor: "black" },
+            cardStyle: { backgroundColor: "black" },
             animation: "fade_from_bottom",
             headerTransparent: true,
             headerShadowVisible: false,

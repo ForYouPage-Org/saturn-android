@@ -16,7 +16,7 @@ import useGetMode from "../../hooks/GetMode";
 import TextArea from "../../components/postContent/TextArea";
 import { PostContentProp } from "../../types/navigation";
 
-import { CameraRoll, PhotoIdentifier } from "../../hooks/useCameraRoll";
+import { CameraRoll } from "../../hooks/useCameraRoll";
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 
 import PickImageButton from "../../components/postContent/PickImageButton";
@@ -58,12 +58,23 @@ import * as Progress from "react-native-progress";
 import { isFeatureEnabled } from "../../config/featureFlags";
 
 const width = Dimensions.get("window").width;
+
+// Define proper type for photo data
+interface PhotoData {
+  node: {
+    image: {
+      uri: string;
+      fileSize?: number;
+    };
+    type: string;
+  };
+}
 export default function PostContent({ navigation }: PostContentProp) {
   console.log("📝 [DEBUG] PostContent component rendered");
 
   const dark = useGetMode();
   const dispatch = useAppDispatch();
-  const [photos, setPhotos] = useState<PhotoIdentifier[]>([]);
+  const [photos, setPhotos] = useState<PhotoData[]>([]);
   const [postPhoto, setPostPhoto] = useState<{
     mimeType: string;
     uri: string;
@@ -76,7 +87,7 @@ export default function PostContent({ navigation }: PostContentProp) {
     size: number;
   } | null>(null);
   const backgroundColor = dark ? "white" : "black";
-  const animationRef = useRef<Lottie>(null);
+  const animationRef = useRef<any>(null);
 
   console.log("📝 [DEBUG] PostContent - dark mode:", dark);
   console.log("📝 [DEBUG] PostContent - backgroundColor:", backgroundColor);
@@ -185,10 +196,10 @@ export default function PostContent({ navigation }: PostContentProp) {
 
         assetType: "Photos",
       })
-        .then((r) => {
+        .then((r: any) => {
           setPhotos(r.edges);
         })
-        .catch((err) => {
+        .catch((err: any) => {
           //Error Loading Images
         });
     }
@@ -233,15 +244,46 @@ export default function PostContent({ navigation }: PostContentProp) {
     "📝 [DEBUG] PostContent - User auth state:",
     userState.token ? "AUTHENTICATED" : "NOT_AUTHENTICATED"
   );
+  console.log(
+    "📝 [DEBUG] PostContent - State rehydrated:",
+    userState !== undefined ? "YES" : "NO"
+  );
+
+  // Show loading while Redux state is rehydrating
+  if (!userState) {
+    console.log(
+      "📝 [DEBUG] PostContent - Waiting for Redux state rehydration..."
+    );
+    return (
+      <AnimatedScreen>
+        <View
+          style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+        >
+          <ActivityIndicator size="large" color={dark ? "white" : "black"} />
+          <Text
+            style={{
+              marginTop: 10,
+              color: dark ? "white" : "black",
+              fontFamily: "mulish",
+            }}
+          >
+            Loading...
+          </Text>
+        </View>
+      </AnimatedScreen>
+    );
+  }
 
   // Monitor auth state changes
   useEffect(() => {
-    console.log("📝 [DEBUG] PostContent - Auth state changed:", {
-      hasToken: !!userState.token,
-      hasData: !!userState.data,
-      loading: userState.loading,
-    });
-  }, [userState.token, userState.data, userState.loading]);
+    if (userState) {
+      console.log("📝 [DEBUG] PostContent - Auth state changed:", {
+        hasToken: !!userState.token,
+        hasData: !!userState.data,
+        loading: userState.loading,
+      });
+    }
+  }, [userState]);
 
   useEffect(() => {
     if (postPhoto || postAudio) {
@@ -336,10 +378,9 @@ export default function PostContent({ navigation }: PostContentProp) {
     if (photoServer) {
       console.log("📝 [DEBUG] Adding photo attachment:", photoServer);
       attachments.push({
+        id: Date.now().toString() + "_image", // Generate a unique ID for the attachment
         type: "image",
         url: photoServer.uri,
-        width: photoServer.width,
-        height: photoServer.height,
       });
     }
 
@@ -347,12 +388,14 @@ export default function PostContent({ navigation }: PostContentProp) {
       if (postAudio) {
         console.log("📝 [DEBUG] Adding audio attachment:", fileToServer);
         attachments.push({
+          id: Date.now().toString() + "_audio", // Generate a unique ID for the attachment
           type: "audio",
           url: fileToServer,
         });
       } else if (postPhoto?.mimeType.startsWith("video/")) {
         console.log("📝 [DEBUG] Adding video attachment:", fileToServer);
         attachments.push({
+          id: Date.now().toString() + "_video", // Generate a unique ID for the attachment
           type: "video",
           url: fileToServer,
         });

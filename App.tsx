@@ -453,6 +453,7 @@ const Navigation = () => {
 
   // 🔧 MVP: Authentication flow - check persisted data first, then route appropriately
   const userState = useAppSelector((state) => state.user);
+  const [authInitialized, setAuthInitialized] = useState(false);
 
   // 🔒 SECURITY FIX: Authentication initialization - run only once on app start
   useEffect(() => {
@@ -517,13 +518,15 @@ const Navigation = () => {
           dispatch(setRoute({ route: "Auth" }));
         }
       }
+
+      setAuthInitialized(true);
     };
 
-    // Only run authentication initialization when route is "onBoard"
-    if (route === "onBoard") {
+    // Only run authentication initialization once when app starts and route is "onBoard"
+    if (route === "onBoard" && !authInitialized) {
       initializeAuth();
     }
-  }, [route]); // 🔒 SECURITY FIX: Remove userState dependencies to prevent race condition
+  }, [route, authInitialized]); // Run only once when app starts
 
   const renderRoute = () => {
     if (route === "onBoard") {
