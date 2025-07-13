@@ -453,18 +453,36 @@ const Navigation = () => {
 
   // 🔧 MVP: Authentication flow - check persisted data first, then route appropriately
   const userState = useAppSelector((state) => state.user);
+  const persistedState = useAppSelector((state) => state._persist);
   const [authInitialized, setAuthInitialized] = useState(false);
+  const [autoLoginCompleted, setAutoLoginCompleted] = useState(false);
 
-  // 🔒 SECURITY FIX: Authentication initialization - run only once on app start
+  // 🔒 SECURITY FIX: Authentication initialization - wait for Redux Persist to rehydrate
   useEffect(() => {
     const initializeAuth = async () => {
-      console.log("🔍 Initializing authentication...");
-      console.log("🔍 Current route:", route);
-      console.log("🔍 User state:", {
+      console.log("🔍 [AUTH INIT] Starting authentication initialization...");
+      console.log("🔍 [AUTH INIT] Current route:", route);
+      console.log("🔍 [AUTH INIT] authInitialized:", authInitialized);
+      console.log("🔍 [AUTH INIT] autoLoginCompleted:", autoLoginCompleted);
+      console.log(
+        "🔍 [AUTH INIT] Redux Persist rehydrated:",
+        persistedState?.rehydrated
+      );
+      console.log("🔍 [AUTH INIT] User state:", {
         hasToken: !!userState.token,
         hasData: !!userState.data,
         loading: userState.loading,
       });
+      console.log(
+        "🔍 [AUTH INIT] DEV_AUTO_LOGIN enabled:",
+        isFeatureEnabled("DEV_AUTO_LOGIN")
+      );
+
+      // 🔒 CRITICAL: Wait for Redux Persist to rehydrate before making auth decisions
+      if (!persistedState?.rehydrated) {
+        console.log("🔍 [AUTH INIT] Waiting for Redux Persist rehydration...");
+        return;
+      }
 
       // Check if we have persisted user data
       if (userState.token && userState.data) {
@@ -492,7 +510,7 @@ const Navigation = () => {
         }
       } else {
         // No persisted data - check feature flags
-        if (isFeatureEnabled("DEV_AUTO_LOGIN")) {
+        if (isFeatureEnabled("DEV_AUTO_LOGIN") && !autoLoginCompleted) {
           console.log("🔧 DEV_AUTO_LOGIN enabled, auto-logging in...");
           // Skip onboarding and auth - go straight to app (development only)
           const testUserData = {
@@ -510,8 +528,14 @@ const Navigation = () => {
           const testToken =
             "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4NzJiOTcwODJiOWUxODliZjk4MjgwNCIsInVzZXJuYW1lIjoidGVzdHVzZXIiLCJpYXQiOjE3NTIzNTAwMDUsImV4cCI6MTc1MjQzNjQwNX0.Q6Rr56qcCVGdLYUWqdDeKa8d-LYmBzNZbN9Fykdnz9Q";
 
+          console.log("🔧 Dispatching loginSuccess with test data...");
           dispatch(loginSuccess({ token: testToken, data: testUserData }));
+          console.log("🔧 Setting route to App...");
           dispatch(setRoute({ route: "App" }));
+          console.log("🔧 Auto-login completed!");
+          setAutoLoginCompleted(true);
+        } else if (isFeatureEnabled("DEV_AUTO_LOGIN") && autoLoginCompleted) {
+          console.log("🔧 Auto-login already completed, skipping...");
         } else {
           // 🚀 MVP Production: Normal flow - go to authentication
           console.log("🔐 No persisted data, routing to Auth");
@@ -522,11 +546,47 @@ const Navigation = () => {
       setAuthInitialized(true);
     };
 
-    // Only run authentication initialization once when app starts and route is "onBoard"
-    if (route === "onBoard" && !authInitialized) {
+    // 🔒 CRITICAL FIX: Only run authentication initialization once when Redux Persist is rehydrated
+    // Remove 'route' from dependencies to prevent re-initialization on route changes
+    console.log(
+      "🔍 [AUTH EFFECT] Effect triggered - authInitialized:",
+      authInitialized,
+      "rehydrated:",
+      persistedState?.rehydrated
+    );
+    if (!authInitialized && persistedState?.rehydrated) {
+      console.log("🔍 [AUTH EFFECT] Running initializeAuth...");
       initializeAuth();
+    } else {
+      console.log(
+        "🔍 [AUTH EFFECT] Auth already initialized or waiting for rehydration, skipping"
+      );
     }
-  }, [route, authInitialized]); // Run only once when app starts
+  }, [
+    authInitialized,
+    persistedState?.rehydrated,
+    userState.token,
+    userState.data,
+    autoLoginCompleted,
+  ]); // 🔒 REMOVED 'route' to prevent re-initialization
+
+  // 🔍 DEBUG: Monitor user state changes to catch when it gets cleared
+  useEffect(() => {
+    console.log("🔍 [USER STATE MONITOR] User state changed:", {
+      hasToken: !!userState?.token,
+      hasData: !!userState?.data,
+      loading: userState?.loading,
+      rehydrated: persistedState?.rehydrated,
+    });
+
+    if (userState?.token) {
+      console.log("✅ [USER STATE MONITOR] User authenticated successfully");
+    } else if (persistedState?.rehydrated) {
+      console.log(
+        "❌ [USER STATE MONITOR] User NOT authenticated (state cleared?)"
+      );
+    }
+  }, [userState?.token, userState?.data, persistedState?.rehydrated]);
 
   const renderRoute = () => {
     if (route === "onBoard") {

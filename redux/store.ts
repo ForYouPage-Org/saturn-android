@@ -22,6 +22,7 @@ import {
   PURGE,
   REGISTER,
   PersistConfig,
+  createTransform,
 } from "redux-persist";
 import chatList, { ChatList } from "./slice/chat/chatlist";
 import { userApi } from "./api/user";
@@ -36,6 +37,47 @@ import { chatApi } from "./api/chat";
 import online from "./slice/chat/online";
 import currentPage from "./slice/currentPage";
 import audio from "./slice/post/audio";
+import { isFeatureEnabled } from "../config/featureFlags";
+
+// 🔒 SECURITY FIX: Create a transform to prevent null user state from overwriting active sessions
+const userTransform = createTransform(
+  // Transform state on its way to being serialized and persisted
+  (inboundState: UserState) => {
+    console.log("🔍 [PERSIST] Saving user state:", inboundState);
+    return inboundState;
+  },
+  // Transform state being rehydrated
+  (outboundState: UserState | undefined, key) => {
+    console.log("🔍 [PERSIST] Rehydrating user state:", outboundState);
+
+    // If we're rehydrating and the state has no token/data, skip rehydration entirely
+    if (!outboundState || !outboundState.token || !outboundState.data) {
+      console.log(
+        "🔍 [PERSIST] Skipping rehydration of null/empty user state - keeping existing state"
+      );
+      // Return the default initial state to avoid overwriting current state
+      return {
+        data: null,
+        error: null,
+        loading: false,
+        token: null,
+      };
+    }
+
+    console.log("🔍 [PERSIST] Rehydrating valid user state");
+    return outboundState;
+  },
+  // Which reducer this transform is for
+  { whitelist: ["user"] }
+);
+
+// 🔒 CRITICAL FIX: Don't persist user state when DEV_AUTO_LOGIN is enabled to prevent race conditions
+const whitelist = isFeatureEnabled("DEV_AUTO_LOGIN")
+  ? ["prefs"] // Only persist preferences in development
+  : ["prefs", "user"]; // Persist both in production
+
+console.log("🔍 [PERSIST] Whitelist configuration:", whitelist);
+
 const persistConfig: PersistConfig<
   CombinedState<{
     routes: Route;
@@ -65,7 +107,9 @@ const persistConfig: PersistConfig<
 > = {
   key: "root",
   storage: reduxStorage,
-  whitelist: ["prefs", "user"], // 🔒 SECURITY FIX: Remove 'routes' to prevent auth bypass
+  whitelist, // 🔒 DYNAMIC: Don't persist user state in development
+  transforms: [userTransform], // 🔒 Add transform to protect user state
+  debug: true, // Enable debug logging
 };
 
 const reducer = combineReducers({

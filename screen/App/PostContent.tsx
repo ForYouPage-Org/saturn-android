@@ -224,6 +224,7 @@ export default function PostContent({ navigation }: PostContentProp) {
   const [uploadMedia] = useUploadMediaMutation();
   const [createPost] = useCreatePostMutation();
   const userState = useAppSelector((state) => state.user);
+  const persistState = useAppSelector((state) => state._persist);
 
   console.log("📝 [DEBUG] PostContent - uploadMedia:", typeof uploadMedia);
   console.log("📝 [DEBUG] PostContent - createPost:", typeof createPost);
@@ -232,7 +233,15 @@ export default function PostContent({ navigation }: PostContentProp) {
     process.env.EXPO_PUBLIC_API_URL
   );
   console.log("📝 [DEBUG] PostContent - Full user state:", userState);
-  console.log("📝 [DEBUG] PostContent - Full Redux state:", store.getState());
+  console.log("📝 [DEBUG] PostContent - Persist state:", persistState);
+  console.log(
+    "📝 [DEBUG] PostContent - Store user state:",
+    store.getState().user
+  );
+  console.log(
+    "📝 [DEBUG] PostContent - Store persist state:",
+    store.getState()._persist
+  );
   console.log(
     "📝 [DEBUG] PostContent - Token:",
     userState?.token ? "EXISTS" : "NULL"
