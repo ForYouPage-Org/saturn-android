@@ -45,6 +45,85 @@ export default function FFContainer({
     setIsOpen(true);
   };
 
+  // Set a state variable to track follow state
+  const [isFollowedState, setIsFollowedState] = useState(isFollowed);
+
+ /**
+ * Handle follow action 
+ */
+const followUser = async (userId: string) => {
+  try {
+    const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/actors/${userId}/follow`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${user?.id}`,
+      },
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || "Failed to follow user");
+    }
+
+    return data;
+  } catch (error) {
+    //TODO: Show message to user 
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    console.error('Unfollow API error:', errorMessage);
+    throw error;
+  }
+};
+
+
+/**
+ * Handle unfollow action
+ */
+const unfollowUser = async (userId: string) => {
+  try {
+    const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/actors/${userId}/follow`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${user?.id}`,
+      },
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || "Failed to unfollow user");
+    }
+
+    return data;
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    console.error('Unfollow API error:', errorMessage);
+    throw error;
+  }
+};
+/**
+ * Toggle follow/unfollow state
+ */
+  const handleFollow = async () => {
+  try {
+    if(isFollowedState) {
+      const res = await unfollowUser(id);
+      console.log("Unfollow User Result: ", res);
+      setIsFollowedState(false);
+    } else {
+      const res = await followUser(id);
+      setIsFollowedState(true);
+      console.log('Follow result: ', res);
+    }
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    console.error('Unfollow API error:', errorMessage);
+  }
+};
+
+
   useEffect(() => {
     socket?.on("hello", (hello) => {});
   }, [socket]);
@@ -145,24 +224,24 @@ export default function FFContainer({
           style={{
             borderRadius: 999,
             borderWidth: 1,
-            backgroundColor: isFollowed ? color : "transparent",
+            backgroundColor: isFollowedState ? color : "transparent",
             overflow: "hidden",
             borderColor: fbuttonBackgroundColor,
           }}
         >
           <Pressable
             android_ripple={{ color: "white" }}
-            onPress={handleMessage}
+            onPress={handleFollow}
             style={{ paddingHorizontal: 10, paddingVertical: 6 }}
           >
             <Text
               style={{
                 fontFamily: "jakara",
-                color: isFollowed ? fBColor1 : fBColor,
+                color: isFollowedState ? fBColor1 : fBColor,
                 includeFontPadding: false,
               }}
             >
-              {isFollowed ? "Following" : "Follow"}
+              {isFollowedState ? "Following" : "Follow"}
             </Text>
           </Pressable>
         </View>
