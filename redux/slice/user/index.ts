@@ -2,7 +2,15 @@ import { PayloadAction, createSlice } from "@reduxjs/toolkit";
 import { IUSerData } from "../../../types/api";
 
 export interface UserState {
-  data: IUSerData | null;
+  // 🔒 Allow for legacy fields until backend is updated
+  data:
+    | (IUSerData & {
+        name?: string;
+        imageUri?: string;
+        iconUrl?: string;
+        userName?: string;
+      })
+    | null;
   error: any;
   token: string | null;
   status: "idle" | "loading" | "authenticated" | "unauthenticated" | "error";
@@ -21,7 +29,17 @@ const user = createSlice({
       action: PayloadAction<{ token: string; data: IUSerData }>
     ) => {
       state.token = action.payload.token;
-      state.data = action.payload.data;
+      // 🔧 Ensure data shape is consistent for both new logins and rehydration
+      const augmentedData = {
+        ...action.payload.data,
+        name:
+          action.payload.data.preferredUsername || action.payload.data.username,
+        userName: action.payload.data.username,
+        imageUri:
+          (action.payload.data as any).iconUrl ||
+          `https://ui-avatars.com/api/?name=${action.payload.data.preferredUsername}&background=random`,
+      };
+      state.data = augmentedData;
       state.error = null;
       state.status = "authenticated";
     },

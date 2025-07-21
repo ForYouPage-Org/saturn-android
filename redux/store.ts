@@ -38,36 +38,33 @@ import online from "./slice/chat/online";
 import currentPage from "./slice/currentPage";
 import audio from "./slice/post/audio";
 import { isFeatureEnabled } from "../config/featureFlags";
+import { IUSerData } from "../types/api";
 
-// 🔒 SECURITY FIX: Create a transform to prevent null user state from overwriting active sessions
+// This transform will be applied to the user slice upon rehydration
 const userTransform = createTransform(
-  // Transform state on its way to being serialized and persisted
+  // We don't need to transform the state on the way in
   (inboundState: UserState) => {
-    console.log("🔍 [PERSIST] Saving user state:", inboundState);
     return inboundState;
   },
-  // Transform state being rehydrated
-  (outboundState: UserState | undefined, key) => {
-    console.log("🔍 [PERSIST] Rehydrating user state:", outboundState);
-
-    // If we're rehydrating and the state has no token/data, skip rehydration entirely
-    if (!outboundState || !outboundState.token || !outboundState.data) {
+  // We transform the state on the way out (upon rehydration)
+  (outboundState: UserState | undefined) => {
+    if (outboundState && outboundState.data) {
       console.log(
-        "🔍 [PERSIST] Skipping rehydration of null/empty user state - keeping existing state"
+        "🔧 [TRANSFORM] Augmenting rehydrated user data for UI compatibility."
       );
-      // Return the default initial state to avoid overwriting current state
-      return {
-        data: null,
-        error: null,
-        loading: false,
-        token: null,
+      const augmentedData = {
+        ...outboundState.data,
+        name:
+          outboundState.data.preferredUsername || outboundState.data.username,
+        userName: outboundState.data.username,
+        imageUri:
+          (outboundState.data as any).iconUrl ||
+          `https://ui-avatars.com/api/?name=${outboundState.data.preferredUsername}&background=random`,
       };
+      return { ...outboundState, data: augmentedData };
     }
-
-    console.log("🔍 [PERSIST] Rehydrating valid user state");
     return outboundState;
   },
-  // Which reducer this transform is for
   { whitelist: ["user"] }
 );
 
@@ -105,7 +102,7 @@ const persistConfig: PersistConfig<
   key: "root",
   storage: reduxStorage,
   whitelist, // 🔒 DYNAMIC: Don't persist user state in development
-  transforms: [userTransform], // 🔒 Add transform to protect user state
+  transforms: [userTransform],
   debug: true, // Enable debug logging
 };
 

@@ -375,24 +375,20 @@ export default function PostContent({ navigation }: PostContentProp) {
     console.log("📝 [DEBUG] fileToServer:", fileToServer);
     console.log("📝 [DEBUG] createPost function:", typeof createPost);
 
-    // Check if user is authenticated - get fresh state from store
-    const currentUserState = store.getState().user;
-
-    console.log(
-      "📝 [DEBUG] Current user state at post time:",
-      currentUserState
-    );
+    // ✅ CORRECT: Use the state from the selector, which is guaranteed to be consistent for this render.
+    console.log("📝 [DEBUG] Current user state at post time:", userState);
     console.log(
       "📝 [DEBUG] Current token status:",
-      currentUserState?.token ? "EXISTS" : "NULL"
+      userState?.token ? "EXISTS" : "NULL"
     );
 
-    if (!currentUserState?.token) {
+    if (userState.status !== "authenticated" || !userState.token) {
       console.log("📝 [DEBUG] User not authenticated, showing login prompt");
       dispatch(
         openToast({ text: "Please log in to create posts", type: "Failed" })
       );
-      dispatch(setRoute({ route: "Auth" }));
+      // The navigation guard in App.tsx should handle the redirect, but this is a safe fallback.
+      navigation.pop();
       return;
     }
 

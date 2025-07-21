@@ -40,10 +40,7 @@ export default function PostButton({
           console.log("📝 [DEBUG] isLoading:", isLoading);
           console.log("📝 [DEBUG] isDisabled:", isDisabled);
           console.log("📝 [DEBUG] onPress function:", typeof onPress);
-          console.log("📝 [DEBUG] About to call resetPost...");
           try {
-            dispatch(resetPost());
-            console.log("📝 [DEBUG] resetPost called successfully");
             console.log("📝 [DEBUG] About to call onPress...");
             onPress();
             console.log("📝 [DEBUG] onPress called successfully");
