@@ -34,16 +34,33 @@ import { LoginScreen } from "../../types/navigation";
 import { servicesApi } from "../../redux/api/services";
 import { userApi } from "../../redux/api/user";
 import { Image } from "expo-image";
-import  ReAnimated,{ useAnimatedKeyboard, useAnimatedStyle } from "react-native-reanimated";
+import ReAnimated, {
+  useAnimatedKeyboard,
+  useAnimatedStyle,
+} from "react-native-reanimated";
 
 const width = Dimensions.get("window").width;
 export default function Login({ navigation }: LoginScreen) {
+  const token = useAppSelector((state) => state.user.token);
+  const dispatch = useAppDispatch();
+
+  // 🔒 CRITICAL FIX: If the login screen is rendered with a valid token,
+  // it's a state inconsistency. Immediately redirect to the app and render nothing.
+  useEffect(() => {
+    if (token) {
+      dispatch(setRoute({ route: "App" }));
+    }
+  }, [token, dispatch]);
+
+  if (token) {
+    return null; // Render nothing to prevent any UI from flashing or causing side effects
+  }
+
   const dark = useGetMode();
   const isDark = dark;
   const [login, loginResponse] = useLoginMutation();
   const color = isDark ? "white" : "black";
   const buttonColor = !isDark ? "white" : "black";
-  const dispatch = useAppDispatch();
   const borderColor = isDark ? "white" : "black";
   const user = useAppSelector((state) => state?.user?.data);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -72,82 +89,108 @@ export default function Login({ navigation }: LoginScreen) {
   }, []);
 
   const onSubmit = (data: { userName: string; password: string }) => {
-    console.log('[DIAGNOSTIC_ANDROID_LOGIN] Entry: The handleLogin function was triggered.');
-    console.log('[DIAGNOSTIC_ANDROID_LOGIN] Loading state:', loginResponse.isLoading);
-    console.log('[DIAGNOSTIC_ANDROID_LOGIN] Data being submitted:', JSON.stringify({ userName: data.userName.trim(), password: '***' }));
-    console.log('[DIAGNOSTIC_ANDROID_LOGIN] Timestamp:', Date.now());
-    
+    console.log(
+      "[DIAGNOSTIC_ANDROID_LOGIN] Entry: The handleLogin function was triggered."
+    );
+    console.log(
+      "[DIAGNOSTIC_ANDROID_LOGIN] Loading state:",
+      loginResponse.isLoading
+    );
+    console.log(
+      "[DIAGNOSTIC_ANDROID_LOGIN] Data being submitted:",
+      JSON.stringify({ userName: data.userName.trim(), password: "***" })
+    );
+    console.log("[DIAGNOSTIC_ANDROID_LOGIN] Timestamp:", Date.now());
+
     // Prevent multiple submissions
     if (loginResponse.isLoading || isSubmitting) {
-      console.log('[DIAGNOSTIC_ANDROID_LOGIN] Already loading/submitting, skipping submission', { 
-        isLoading: loginResponse.isLoading, 
-        isSubmitting 
-      });
+      console.log(
+        "[DIAGNOSTIC_ANDROID_LOGIN] Already loading/submitting, skipping submission",
+        {
+          isLoading: loginResponse.isLoading,
+          isSubmitting,
+        }
+      );
       return;
     }
-    
+
     // Add cooldown period to prevent rapid successive attempts
     const now = Date.now();
     const timeSinceLastSubmission = now - lastSubmissionTime;
     const minCooldownMs = 2000; // 2 seconds minimum between attempts
-    
+
     if (timeSinceLastSubmission < minCooldownMs) {
-      console.log('[DIAGNOSTIC_ANDROID_LOGIN] Cooldown period active, skipping submission', {
-        timeSinceLastSubmission,
-        remainingCooldown: minCooldownMs - timeSinceLastSubmission
-      });
-      dispatch(openToast({ 
-        text: "Please wait a moment before trying again.", 
-        type: "Failed" 
-      }));
+      console.log(
+        "[DIAGNOSTIC_ANDROID_LOGIN] Cooldown period active, skipping submission",
+        {
+          timeSinceLastSubmission,
+          remainingCooldown: minCooldownMs - timeSinceLastSubmission,
+        }
+      );
+      dispatch(
+        openToast({
+          text: "Please wait a moment before trying again.",
+          type: "Failed",
+        })
+      );
       return;
     }
-    
+
     setIsSubmitting(true);
     setLastSubmissionTime(now);
-    
+
     try {
       // userApi.util.resetApiState();
       // servicesApi.util.resetApiState();
-      console.log('[DIAGNOSTIC_ANDROID_LOGIN] Making API call to:', `${process.env.EXPO_PUBLIC_API_URL}/api/auth/login`);
+      console.log(
+        "[DIAGNOSTIC_ANDROID_LOGIN] Making API call to:",
+        `${process.env.EXPO_PUBLIC_API_URL}/api/auth/login`
+      );
       login({ username: data.userName.trim(), password: data.password })
         .unwrap()
         .then((e) => {
-          console.log('[DIAGNOSTIC_ANDROID_LOGIN] Success response received');
-          console.log('[DIAGNOSTIC_ANDROID_LOGIN] Response data:', { hasToken: !!e.token, hasData: !!e.data, msg: e.msg });
-          
+          console.log("[DIAGNOSTIC_ANDROID_LOGIN] Success response received");
+          console.log("[DIAGNOSTIC_ANDROID_LOGIN] Response data:", {
+            hasToken: !!e.token,
+            hasData: !!e.data,
+            msg: e.msg,
+          });
+
           // Save login data to Redux
           dispatch(loginSuccess({ token: e.token, data: e.actor }));
-          
+
           // Navigate to main app
           dispatch(setRoute({ route: "App" }));
-          
+
           Vibration.vibrate(5);
           dispatch(openToast({ text: "Successful Login", type: "Success" }));
         })
         .catch((e) => {
-          console.error('[DIAGNOSTIC_ANDROID_LOGIN] API Error caught:', e);
-          console.error('[DIAGNOSTIC_ANDROID_LOGIN] Error structure:', {
+          console.error("[DIAGNOSTIC_ANDROID_LOGIN] API Error caught:", e);
+          console.error("[DIAGNOSTIC_ANDROID_LOGIN] Error structure:", {
             hasData: !!e?.data,
             hasMsg: !!e?.data?.msg,
             status: e?.status,
-            fullError: JSON.stringify(e)
+            fullError: JSON.stringify(e),
           });
           Vibration.vibrate(5);
-          
+
           // Handle rate limiting specifically
           if (e?.status === 429) {
-            dispatch(openToast({ 
-              text: "Too many login attempts. Please wait a moment and try again.", 
-              type: "Failed" 
-            }));
+            dispatch(
+              openToast({
+                text: "Too many login attempts. Please wait a moment and try again.",
+                type: "Failed",
+              })
+            );
             return;
           }
-          
+
           // TEMPORARY: Handle server errors with known working tokens for test accounts
           const testAccounts = {
-            'testuser': {
-              token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4NzJiOTcwODJiOWUxODliZjk4MjgwNCIsInVzZXJuYW1lIjoidGVzdHVzZXIiLCJpYXQiOjE3NTIzNTAwMDUsImV4cCI6MTc1MjQzNjQwNX0.Q6Rr56qcCVGdLYUWqdDeKa8d-LYmBzNZbN9Fykdnz9Q",
+            testuser: {
+              token:
+                "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4NzJiOTcwODJiOWUxODliZjk4MjgwNCIsInVzZXJuYW1lIjoidGVzdHVzZXIiLCJpYXQiOjE3NTIzNTAwMDUsImV4cCI6MTc1MjQzNjQwNX0.Q6Rr56qcCVGdLYUWqdDeKa8d-LYmBzNZbN9Fykdnz9Q",
               actor: {
                 _id: "6872b97082b9e189bf982804",
                 id: "6872b97082b9e189bf982804",
@@ -157,11 +200,12 @@ export default function Login({ navigation }: LoginScreen) {
                 following: [],
                 email: "testuser@example.com",
                 createdAt: "2025-07-12T19:37:20.231Z",
-                updatedAt: "2025-07-12T19:37:20.231Z"
-              }
+                updatedAt: "2025-07-12T19:37:20.231Z",
+              },
             },
-            'adminuser': {
-              token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4NzJiOTc3ODJiOWUxODliZjk4MjgwNSIsInVzZXJuYW1lIjoiYWRtaW51c2VyIiwiaWF0IjoxNzUyMzUwMDEzLCJleHAiOjE3NTI0MzY0MTN9.IGD1EzGrk77dpHKp4V5FWgBO2iUyXmY3RKpl2eO9atA",
+            adminuser: {
+              token:
+                "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4NzJiOTc3ODJiOWUxODliZjk4MjgwNSIsInVzZXJuYW1lIjoiYWRtaW51c2VyIiwiaWF0IjoxNzUyMzUwMDEzLCJleHAiOjE3NTI0MzY0MTN9.IGD1EzGrk77dpHKp4V5FWgBO2iUyXmY3RKpl2eO9atA",
               actor: {
                 _id: "6872b97782b9e189bf982805",
                 id: "6872b97782b9e189bf982805",
@@ -171,31 +215,53 @@ export default function Login({ navigation }: LoginScreen) {
                 following: [],
                 email: "admin@example.com",
                 createdAt: "2025-07-12T19:37:20.231Z",
-                updatedAt: "2025-07-12T19:37:20.231Z"
-              }
-            }
+                updatedAt: "2025-07-12T19:37:20.231Z",
+              },
+            },
           };
 
-          if ((e?.status === 500 || e?.status === 401) && testAccounts[data.userName]) {
-            console.log(`[DIAGNOSTIC_ANDROID_LOGIN] Server error detected, using fallback token for ${data.userName}`);
+          if (
+            (e?.status === 500 || e?.status === 401) &&
+            testAccounts[data.userName]
+          ) {
+            console.log(
+              `[DIAGNOSTIC_ANDROID_LOGIN] Server error detected, using fallback token for ${data.userName}`
+            );
             const fallbackResponse = testAccounts[data.userName];
-            
-            dispatch(loginSuccess({ token: fallbackResponse.token, data: fallbackResponse.actor }));
+
+            dispatch(
+              loginSuccess({
+                token: fallbackResponse.token,
+                data: fallbackResponse.actor,
+              })
+            );
             dispatch(setRoute({ route: "App" }));
             Vibration.vibrate(5);
-            dispatch(openToast({ text: `Successful Login (Fallback Token - ${data.userName})`, type: "Success" }));
+            dispatch(
+              openToast({
+                text: `Successful Login (Fallback Token - ${data.userName})`,
+                type: "Success",
+              })
+            );
             return;
           }
-          
+
           // Fix: Safely access the error message from new server format
-          const errorMessage = e?.data?.error || e?.data?.msg || e?.data?.message || 'Login failed';
+          const errorMessage =
+            e?.data?.error ||
+            e?.data?.msg ||
+            e?.data?.message ||
+            "Login failed";
           dispatch(openToast({ text: errorMessage, type: "Failed" }));
         })
         .finally(() => {
           setIsSubmitting(false);
         });
     } catch (error) {
-      console.error('[DIAGNOSTIC_ANDROID_LOGIN] FATAL: An error was caught inside the handleLogin function.', error);
+      console.error(
+        "[DIAGNOSTIC_ANDROID_LOGIN] FATAL: An error was caught inside the handleLogin function.",
+        error
+      );
       setIsSubmitting(false);
     }
   };
@@ -256,15 +322,15 @@ export default function Login({ navigation }: LoginScreen) {
       keyboardDidShowListener.remove();
     };
   }, []);
-  const keyboard = useAnimatedKeyboard({isStatusBarTranslucentAndroid:true});
+  const keyboard = useAnimatedKeyboard({ isStatusBarTranslucentAndroid: true });
   const animatedStyles = useAnimatedStyle(() => ({
     transform: [{ translateY: -keyboard.height.value }],
-    paddingTop:keyboard.height.value
+    paddingTop: keyboard.height.value,
   }));
   return (
     <AnimatedScreen>
       <TouchableWithoutFeedback style={{ flex: 1 }} onPress={Keyboard.dismiss}>
-        <ReAnimated.View style={[{ flex: 1, marginTop:40 },animatedStyles]}>
+        <ReAnimated.View style={[{ flex: 1, marginTop: 40 }, animatedStyles]}>
           <ScrollView
             ref={scrollViewRef}
             showsVerticalScrollIndicator={false}

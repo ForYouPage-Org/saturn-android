@@ -5,26 +5,29 @@ export interface UserState {
   data: IUSerData | null;
   error: any;
   token: string | null;
-  loading: boolean;
+  status: "idle" | "loading" | "authenticated" | "unauthenticated" | "error";
 }
 const user = createSlice({
   name: "user",
   initialState: {
     data: null,
     error: null,
-    loading: false,
+    status: "unauthenticated",
     token: null,
   } as UserState,
   reducers: {
-    loginSuccess: (state, action: PayloadAction<{ token: string; data: IUSerData }>) => {
+    loginSuccess: (
+      state,
+      action: PayloadAction<{ token: string; data: IUSerData }>
+    ) => {
       state.token = action.payload.token;
       state.data = action.payload.data;
       state.error = null;
-      state.loading = false;
+      state.status = "authenticated";
     },
     signOut: (state) => {
       state.error = null;
-      state.loading = false;
+      state.status = "unauthenticated";
       state.token = null;
       state.data = null;
       // Socket disconnect will be handled by middleware
@@ -32,7 +35,7 @@ const user = createSlice({
     clearUserData: (state) => {
       state.data = null;
       state.error = null;
-      state.loading = false;
+      state.status = "unauthenticated";
       state.token = null;
     },
   },

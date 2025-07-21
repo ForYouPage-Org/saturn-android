@@ -2249,26 +2249,7 @@ if (isExpired) {
 - Authorization header format: `Bearer <token>`
 
 ### **Best Practices for Frontend Teams**
-
-#### **Error Handling**
-
-```javascript
-const handleApiCall = async (url, options) => {
-  try {
-    const response = await fetch(url, options);
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.error || `HTTP ${response.status}`);
-    }
-
-    return data;
-  } catch (error) {
-    console.error("API Error:", error);
-    showToast(error.message);
-    throw error;
-  }
-};
+r
 ```
 
 #### **Token Management**

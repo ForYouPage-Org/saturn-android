@@ -51,6 +51,7 @@ import { PaperProvider } from "react-native-paper";
 import { LoadingModal } from "./components/global/Modal/LoadingOverlay";
 import { enableFreeze } from "react-native-screens";
 import { SystemBars } from "react-native-edge-to-edge";
+import AuthManager from "./services/AuthManager";
 import Animated, {
   BounceOutDown,
   Easing,
@@ -170,13 +171,17 @@ export default function App() {
           <PersistGate persistor={persistor}>
             {Platform.OS === "android" ? (
               <PaperProvider>
+                <AuthManager />
                 <CustomToast />
                 <LoadingModal />
                 <Navigation />
               </PaperProvider>
             ) : (
               // iOS/Web: Skip components that require PaperProvider
-              <Navigation />
+              <>
+                <AuthManager />
+                <Navigation />
+              </>
             )}
           </PersistGate>
         </Provider>
@@ -387,7 +392,6 @@ const Navigation = () => {
   const dispatch = useAppDispatch();
   const style = dark ? "light" : "dark";
   useGetFollowDetailsQuery(null);
-  const { route } = useAppSelector((state) => state.routes);
 
   const netInfo = useNetInfo();
 
@@ -435,175 +439,32 @@ const Navigation = () => {
     jakara: require("./assets/fonts/PlusJakartaSans-Medium.ttf"),
   });
 
-  // 🔧 MVP: Development helper - clear storage function
-  const clearAllStorage = async () => {
-    try {
-      console.log("🗑️ Clearing all persisted storage...");
-      await persistor.purge(); // Use Redux Persist's purge method
-      dispatch(clearUserData());
-      dispatch(setRoute({ route: "Auth" }));
-      console.log("✅ Storage cleared successfully");
-    } catch (error) {
-      console.error("❌ Error clearing storage:", error);
-    }
-  };
-
-  // 🔧 MVP: Development - uncomment next line to force clear storage on app start
-  // useEffect(() => { clearAllStorage(); }, []); // 🔧 DISABLED: Storage clearing to allow login persistence
-
-  // 🔧 MVP: Authentication flow - check persisted data first, then route appropriately
-  const userState = useAppSelector((state) => state.user);
-  const persistedState = useAppSelector((state) => state._persist);
-  const [authInitialized, setAuthInitialized] = useState(false);
-  const [autoLoginCompleted, setAutoLoginCompleted] = useState(false);
-
-  // 🔒 SECURITY FIX: Authentication initialization - wait for Redux Persist to rehydrate
-  useEffect(() => {
-    const initializeAuth = async () => {
-      console.log("🔍 [AUTH INIT] Starting authentication initialization...");
-      console.log("🔍 [AUTH INIT] Current route:", route);
-      console.log("🔍 [AUTH INIT] authInitialized:", authInitialized);
-      console.log("🔍 [AUTH INIT] autoLoginCompleted:", autoLoginCompleted);
-      console.log(
-        "🔍 [AUTH INIT] Redux Persist rehydrated:",
-        persistedState?.rehydrated
-      );
-      console.log("🔍 [AUTH INIT] User state:", {
-        hasToken: !!userState.token,
-        hasData: !!userState.data,
-        loading: userState.loading,
-      });
-      console.log(
-        "🔍 [AUTH INIT] DEV_AUTO_LOGIN enabled:",
-        isFeatureEnabled("DEV_AUTO_LOGIN")
-      );
-
-      // 🔒 CRITICAL: Wait for Redux Persist to rehydrate before making auth decisions
-      if (!persistedState?.rehydrated) {
-        console.log("🔍 [AUTH INIT] Waiting for Redux Persist rehydration...");
-        return;
-      }
-
-      // Check if we have persisted user data
-      if (userState.token && userState.data) {
-        console.log("🔍 Found persisted user data, checking token validity...");
-
-        // Check if token is expired
-        try {
-          const tokenPayload = JSON.parse(atob(userState.token.split(".")[1]));
-          const isExpired = tokenPayload.exp * 1000 < Date.now();
-
-          if (isExpired) {
-            console.log(
-              "🚨 Token expired, clearing user data and routing to Auth"
-            );
-            dispatch(clearUserData());
-            dispatch(setRoute({ route: "Auth" }));
-          } else {
-            console.log("✅ Token valid, routing to App");
-            dispatch(setRoute({ route: "App" }));
-          }
-        } catch (error) {
-          console.log("🚨 Invalid token format, clearing user data");
-          dispatch(clearUserData());
-          dispatch(setRoute({ route: "Auth" }));
-        }
-      } else {
-        // No persisted data - check feature flags
-        if (isFeatureEnabled("DEV_AUTO_LOGIN") && !autoLoginCompleted) {
-          console.log("🔧 DEV_AUTO_LOGIN enabled, auto-logging in...");
-          // Skip onboarding and auth - go straight to app (development only)
-          const testUserData = {
-            _id: "6872b97082b9e189bf982804",
-            id: "6872b97082b9e189bf982804",
-            username: "testuser",
-            preferredUsername: "testuser",
-            followers: [],
-            following: [],
-            email: "testuser@example.com",
-            createdAt: "2025-07-12T19:37:20.231Z",
-            updatedAt: "2025-07-12T19:37:20.231Z",
-          };
-
-          const testToken =
-            "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4NzJiOTcwODJiOWUxODliZjk4MjgwNCIsInVzZXJuYW1lIjoidGVzdHVzZXIiLCJpYXQiOjE3NTIzNTAwMDUsImV4cCI6MTc1MjQzNjQwNX0.Q6Rr56qcCVGdLYUWqdDeKa8d-LYmBzNZbN9Fykdnz9Q";
-
-          console.log("🔧 Dispatching loginSuccess with test data...");
-          dispatch(loginSuccess({ token: testToken, data: testUserData }));
-          console.log("🔧 Setting route to App...");
-          dispatch(setRoute({ route: "App" }));
-          console.log("🔧 Auto-login completed!");
-          setAutoLoginCompleted(true);
-        } else if (isFeatureEnabled("DEV_AUTO_LOGIN") && autoLoginCompleted) {
-          console.log("🔧 Auto-login already completed, skipping...");
-        } else {
-          // 🚀 MVP Production: Normal flow - go to authentication
-          console.log("🔐 No persisted data, routing to Auth");
-          dispatch(setRoute({ route: "Auth" }));
-        }
-      }
-
-      setAuthInitialized(true);
-    };
-
-    // 🔒 CRITICAL FIX: Only run authentication initialization once when Redux Persist is rehydrated
-    // Remove 'route' from dependencies to prevent re-initialization on route changes
-    console.log(
-      "🔍 [AUTH EFFECT] Effect triggered - authInitialized:",
-      authInitialized,
-      "rehydrated:",
-      persistedState?.rehydrated
-    );
-    if (!authInitialized && persistedState?.rehydrated) {
-      console.log("🔍 [AUTH EFFECT] Running initializeAuth...");
-      initializeAuth();
-    } else {
-      console.log(
-        "🔍 [AUTH EFFECT] Auth already initialized or waiting for rehydration, skipping"
-      );
-    }
-  }, [
-    authInitialized,
-    persistedState?.rehydrated,
-    userState.token,
-    userState.data,
-    autoLoginCompleted,
-  ]); // 🔒 REMOVED 'route' to prevent re-initialization
-
-  // 🔍 DEBUG: Monitor user state changes to catch when it gets cleared
-  useEffect(() => {
-    console.log("🔍 [USER STATE MONITOR] User state changed:", {
-      hasToken: !!userState?.token,
-      hasData: !!userState?.data,
-      loading: userState?.loading,
-      rehydrated: persistedState?.rehydrated,
-    });
-
-    if (userState?.token) {
-      console.log("✅ [USER STATE MONITOR] User authenticated successfully");
-    } else if (persistedState?.rehydrated) {
-      console.log(
-        "❌ [USER STATE MONITOR] User NOT authenticated (state cleared?)"
-      );
-    }
-  }, [userState?.token, userState?.data, persistedState?.rehydrated]);
+  // 🔧 MVP: Authentication flow is now handled by AuthManager
+  const { route } = useAppSelector((state) => state.routes) || {};
+  const { status: authStatus } = useAppSelector((state) => state.user);
 
   const renderRoute = () => {
-    if (route === "onBoard") {
-      return <OnboardNavigation />;
-    } else if (route === "App") {
+    // While the app is initializing and we don't know the auth state,
+    // show nothing or a splash screen.
+    if (authStatus === "loading" || authStatus === "idle") {
+      // In a real app, you'd return a dedicated splash screen component.
+      return null;
+    }
+
+    if (authStatus === "authenticated") {
       return (
         <FadeInView style={{ flex: 1 }}>
           <Main />
         </FadeInView>
       );
-    } else if (route === "Auth") {
-      return (
-        <FadeInView style={{ flex: 1 }}>
-          <Auth />
-        </FadeInView>
-      );
     }
+
+    // For any other status ('unauthenticated', 'error'), show the Auth flow.
+    return (
+      <FadeInView style={{ flex: 1 }}>
+        <Auth />
+      </FadeInView>
+    );
   };
   const onLayoutRootView = useCallback(async () => {
     if (fontsLoaded) {
