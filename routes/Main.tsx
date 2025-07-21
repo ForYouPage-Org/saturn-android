@@ -440,12 +440,9 @@ export default function Main() {
           name="PostContent"
           options={{
             title: "",
-
             headerShown: false,
-            animation: "fade_from_bottom",
-            headerTransparent: true,
-            headerShadowVisible: false,
-            headerTintColor: "white",
+            animation: "none", //  Disable animation for maximum stability
+            presentation: "card",
           }}
           component={PostContent}
         />

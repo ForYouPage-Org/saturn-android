@@ -20,10 +20,7 @@ import { Image } from "expo-image";
 import Button from "../global/Buttons/Button";
 import { CameraIcon, ProfileIcon } from "../icons";
 import PickImageButton from "./UploadPic";
-import {
-  useLazyGetUserQuery,
-  useUploadProfilePictureMutation,
-} from "../../redux/api/user";
+import { useLazyGetUserQuery } from "../../redux/api/user";
 import PickGifButton from "./UploadGif";
 
 const { height, width } = Dimensions.get("screen");
@@ -47,14 +44,15 @@ export const UploadPhotoModal = ({
 
   const [getUser, responseGetUser] = useLazyGetUserQuery();
 
-  const [uploadPhoto, response] = useUploadProfilePictureMutation();
-
+  //  MOCK UPLOAD FUNCTIONALITY FOR MVP
   const handleSetPostPhoto = (mimeType: string, uri: string, size: number) => {
-    uploadPhoto({ mimeType, uri })
-      .unwrap()
-      .then((e) => {
-        getUser(null).then((e)=>{}).catch((e)=>{});
-      });
+    // This is a placeholder. In a real app, you would handle the upload here.
+    console.log(" MOCK UPLOAD:", { mimeType, uri, size });
+    //  uploadPhoto({ mimeType, uri })
+    //    .unwrap()
+    //    .then((e) => {
+    //      getUser(null).then((e)=>{}).catch((e)=>{});
+    //    });
   };
 
   return (
@@ -70,7 +68,7 @@ export const UploadPhotoModal = ({
           >
             <BlurView
               tint={tint}
-                experimentalBlurMethod="dimezisBlurView"
+              experimentalBlurMethod="dimezisBlurView"
               style={{ position: "absolute", height, width }}
               intensity={40}
             />
@@ -89,44 +87,26 @@ export const UploadPhotoModal = ({
                 ></View>
               </Pressable>
 
-              {response.isLoading ? (
-                <View
-                  style={{
-                    position: "absolute",
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    zIndex: 999,
-                    bottom: 0,
-                    height: "100%",
-                    justifyContent: "center",
-                    width: "100%",
-                  }}
-                >
-                  <ActivityIndicator size={"large"} color="white" />
-                </View>
-              ) : (
-                <View
-                  style={{
-                    height: "60%",
-                    width: "100%",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    position: "absolute",
-                    pointerEvents: "box-none",
-                  }}
-                >
-                  {imageUri ? (
-                    <Image
-                      style={{ height: 300, width: 300, borderRadius: 9999 }}
-                      contentFit="contain"
-                      source={{ uri: imageUri }}
-                    />
-                  ) : (
-                    <ProfileIcon size={400} color={color} />
-                  )}
-                </View>
-              )}
+              <View
+                style={{
+                  height: "60%",
+                  width: "100%",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  position: "absolute",
+                  pointerEvents: "box-none",
+                }}
+              >
+                {imageUri ? (
+                  <Image
+                    style={{ height: 300, width: 300, borderRadius: 9999 }}
+                    contentFit="contain"
+                    source={{ uri: imageUri }}
+                  />
+                ) : (
+                  <ProfileIcon size={400} color={color} />
+                )}
+              </View>
               <View
                 style={{
                   flexDirection: "row",

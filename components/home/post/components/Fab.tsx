@@ -5,6 +5,7 @@ import { useNavigation } from "@react-navigation/native";
 import { HomeNavigationProp } from "../../../../types/navigation";
 import DeviceInfo from "react-native-device-info";
 import { useAppSelector } from "../../../../redux/hooks/hooks";
+import AddPostButton from "./AddPostButton";
 
 export default function Fab({ item }: { item: JSX.Element }) {
   const dark = useGetMode();
@@ -21,9 +22,9 @@ export default function Fab({ item }: { item: JSX.Element }) {
         bottom: 100,
         borderRadius: 999,
         right: 10,
-        borderColor: dark?"#FFFFFF1E":"#00000012",
+        borderColor: dark ? "#FFFFFF1E" : "#00000012",
         borderWidth: 0.5,
-      
+
         alignItems: "center",
         backgroundColor: !isHighEndDevice ? backgroundColor : undefined,
         justifyContent: "center",
@@ -34,7 +35,7 @@ export default function Fab({ item }: { item: JSX.Element }) {
       }}
     >
       <Pressable
-        android_ripple={{ color: "white", foreground: true }}
+        android_ripple={{ color: "white" }}
         onPress={() => {
           navigation.navigate("PostContent");
         }}
