@@ -185,22 +185,29 @@ export default function PostContent({ navigation }: PostContentProp) {
     return await getRequestPermissionPromise();
   }
 
+  const [photosLoading, setPhotosLoading] = useState(true);
+
   useEffect(() => {
     async function getPicture() {
+      setPhotosLoading(true);
       if (Platform.OS === "android" && !(await hasAndroidPermission())) {
+        setPhotosLoading(false);
         return;
       }
 
       CameraRoll.getPhotos({
         first: 20,
-
         assetType: "Photos",
       })
         .then((r: any) => {
-          setPhotos(r.edges);
+          console.log("📸 [DEBUG] Photos loaded:", r.edges.length);
+          setPhotos(r.edges || []); // Ensure we always set an array
+          setPhotosLoading(false);
         })
         .catch((err: any) => {
-          //Error Loading Images
+          console.log("📸 [DEBUG] Error loading photos:", err);
+          setPhotos([]); // Set empty array on error
+          setPhotosLoading(false);
         });
     }
     getPicture();
@@ -363,106 +370,42 @@ export default function PostContent({ navigation }: PostContentProp) {
   }, [postPhoto, postAudio]);
 
   const handlePostText = (text: string) => {
+    // 🕵️‍♂️ [DIAGNOSTIC LOG] handlePostText
+    console.log("🕵️‍♂️ [DIAGNOSTIC LOG] handlePostText called.");
     setPostText(text);
   };
 
-  const handlePostContent = () => {
-    console.log("📝 [DEBUG] PostContent.handlePostContent called!");
-    console.log("📝 [DEBUG] postText:", postText);
-    console.log("📝 [DEBUG] postPhoto:", postPhoto);
-    console.log("📝 [DEBUG] postAudio:", postAudio);
-    console.log("📝 [DEBUG] photoServer:", photoServer);
-    console.log("📝 [DEBUG] fileToServer:", fileToServer);
-    console.log("📝 [DEBUG] createPost function:", typeof createPost);
-
-    // ✅ CORRECT: Use the state from the selector, which is guaranteed to be consistent for this render.
-    console.log("📝 [DEBUG] Current user state at post time:", userState);
+  const handlePostContent = async () => {
+    // 🕵️‍♂️ [DIAGNOSTIC LOG] handlePostContent
     console.log(
-      "📝 [DEBUG] Current token status:",
-      userState?.token ? "EXISTS" : "NULL"
+      "🕵️‍♂️ [DIAGNOSTIC LOG] handlePostContent --- ASYNC ACTION START ---"
+    );
+    console.log(
+      "🕵️‍♂️ [DIAGNOSTIC LOG] User state at time of press:",
+      JSON.stringify(userState, null, 2)
     );
 
     if (userState.status !== "authenticated" || !userState.token) {
-      console.log("📝 [DEBUG] User not authenticated, showing login prompt");
-      dispatch(
-        openToast({ text: "Please log in to create posts", type: "Failed" })
-      );
-      // The navigation guard in App.tsx should handle the redirect, but this is a safe fallback.
-      navigation.pop();
+      console.log("🚨 [DIAGNOSTIC LOG] Auth check FAILED. Aborting post.");
+      dispatch(openToast({ text: "Please Login", type: "Failed" }));
       return;
     }
 
-    Keyboard.dismiss();
-
-    if (!postText && !postPhoto && !postAudio) {
-      console.log("📝 [DEBUG] No content to post, showing toast");
-      dispatch(
-        openToast({ text: "Please add content to your post", type: "Failed" })
-      );
-      return;
-    }
-
-    console.log("📝 [DEBUG] Opening loading modal...");
-    dispatch(openLoadingModal());
-
-    // Prepare attachments array for API
-    const attachments = [];
-
-    if (photoServer) {
-      console.log("📝 [DEBUG] Adding photo attachment:", photoServer);
-      attachments.push({
-        id: Date.now().toString() + "_image", // Generate a unique ID for the attachment
-        type: "image",
-        url: photoServer.uri,
-      });
-    }
-
-    if (fileToServer) {
-      if (postAudio) {
-        console.log("📝 [DEBUG] Adding audio attachment:", fileToServer);
-        attachments.push({
-          id: Date.now().toString() + "_audio", // Generate a unique ID for the attachment
-          type: "audio",
-          url: fileToServer,
-        });
-      } else if (postPhoto?.mimeType.startsWith("video/")) {
-        console.log("📝 [DEBUG] Adding video attachment:", fileToServer);
-        attachments.push({
-          id: Date.now().toString() + "_video", // Generate a unique ID for the attachment
-          type: "video",
-          url: fileToServer,
-        });
-      }
-    }
-
-    const postData = {
-      content: postText || "",
-      attachments: attachments.length > 0 ? attachments : undefined,
-      visibility: "public" as const,
+    const body = {
+      content: postText,
+      attachments: [],
     };
 
-    console.log("📝 [DEBUG] Final post data:", postData);
-    console.log("📝 [DEBUG] About to call createPost...");
-
     try {
-      createPost(postData)
-        .unwrap()
-        .then((e) => {
-          console.log("📝 [DEBUG] createPost success:", e);
-          dispatch(openToast({ text: "Successfully posted", type: "Success" }));
-          navigation.pop();
-          dispatch(closeLoadingModal());
-        })
-        .catch((e) => {
-          console.error("📝 [DEBUG] createPost error:", e);
-          const errorMessage = e?.data?.error || "Post failed";
-          dispatch(openToast({ text: errorMessage, type: "Failed" }));
-          dispatch(closeLoadingModal());
-        });
+      console.log("🕵️‍♂️ [DIAGNOSTIC LOG] Awaiting createPost mutation...");
+      await createPost(body).unwrap();
+      console.log(
+        "✅ [DIAGNOSTIC LOG] createPost mutation successful. Navigating back."
+      );
+      navigation.goBack();
     } catch (error) {
-      console.error("📝 [DEBUG] Exception in createPost:", error);
-      dispatch(openToast({ text: "Post failed - exception", type: "Failed" }));
-      dispatch(closeLoadingModal());
+      console.error("🚨 [DIAGNOSTIC LOG] createPost mutation failed:", error);
+      dispatch(openToast({ text: "Failed to create post.", type: "Failed" }));
     }
   };
   const [progress, setProgress] = useState(0);
@@ -606,7 +549,8 @@ export default function PostContent({ navigation }: PostContentProp) {
             }}
           />
         )}
-        {!postPhoto && !postAudio && (
+        {/* 🕵️‍♂️ [DIAGNOSTIC STEP] The entire gallery section is commented out to isolate the crash source. */}
+        {/* {!postPhoto && !postAudio && (
           <Animated.View
             entering={FadeInDown.springify()}
             exiting={FadeOutDown.springify()}
@@ -642,60 +586,78 @@ export default function PostContent({ navigation }: PostContentProp) {
               </Animated.View>
             )}
 
-            <FlatList
-              horizontal
-              ListHeaderComponent={
-                <View style={{ flexDirection: "row", gap: 10 }}>
-                  <PickImageButton handleSetPhotoPost={handleSetPhotoPost} />
-                  {/* 🚫 MVP: Disable video upload */}
-                  {isFeatureEnabled("VIDEO_UPLOAD") && (
-                    <PickVideoButton
-                      handleSetPhotoPost={handleSetPhotoPost}
-                      setProgress={setProgress}
-                      setIsCompressing={setCompressing}
-                    />
-                  )}
-                  {/* 🚫 MVP: Disable audio upload */}
-                  {isFeatureEnabled("AUDIO_UPLOAD") && (
-                    <PickAudioButton handleSetAudioPost={handleSetAudioPost} />
-                  )}
-                </View>
-              }
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ gap: 10, paddingLeft: 10 }}
-              data={photos}
-              renderItem={({ item }) => {
-                return (
-                  <View
-                    style={{
-                      height: 100,
-                      width: 100,
-                      borderRadius: 10,
-                      overflow: "hidden",
-                    }}
-                  >
-                    <Pressable
-                      android_ripple={{ color: "#FFFFFF", foreground: true }}
-                      style={{ borderRadius: 10 }}
-                      onPress={() => {
-                        setPostPhoto({
-                          uri: item?.node?.image?.uri,
-                          mimeType: item?.node?.type,
-                          size: item?.node?.image?.fileSize || 0,
-                        });
+            {photosLoading ? (
+              <ActivityIndicator color={dark ? "white" : "black"} />
+            ) : (
+              <FlatList
+                horizontal
+                ListHeaderComponent={
+                  <View style={{ flexDirection: "row", gap: 10 }}>
+                    <Text style={{ color: dark ? "white" : "black" }}>
+                      Gallery loading...
+                    </Text>
+                  </View>
+                }
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{ gap: 10, paddingLeft: 10 }}
+                data={photos}
+                renderItem={({ item, index }) => {
+                  console.log(
+                    `🕵️‍♂️ [DIAGNOSTIC LOG] Rendering FlatList item ${index}`
+                  );
+                  // ✅ CRASH FIX: Add null checks for item structure
+                  if (!item?.node?.image?.uri) {
+                    console.log(
+                      "⚠️ [DEBUG] Invalid photo item, skipping render:",
+                      item
+                    );
+                    return null; // Don't render invalid items
+                  }
+                  return (
+                    <View
+                      style={{
+                        height: 100,
+                        width: 100,
+                        borderRadius: 10,
+                        overflow: "hidden",
                       }}
                     >
-                      <Image
-                        style={{ height: 100, width: 100, borderRadius: 10 }}
-                        source={{ uri: item?.node?.image?.uri }}
-                      />
-                    </Pressable>
-                  </View>
-                );
-              }}
-            />
+                      <Pressable
+                        android_ripple={{ color: "#FFFFFF", foreground: true }}
+                        style={{ borderRadius: 10 }}
+                        onPress={() => {
+                          // ✅ CRASH FIX: Double-check before setting state
+                          if (item?.node?.image?.uri && item?.node?.type) {
+                            setPostPhoto({
+                              uri: item.node.image.uri,
+                              mimeType: item.node.type,
+                              size: item.node.image.fileSize || 0,
+                            });
+                          }
+                        }}
+                      >
+                        <Image
+                          style={{
+                            height: 100,
+                            width: 100,
+                            borderRadius: 10,
+                          }}
+                          source={{ uri: item.node.image.uri }}
+                          onError={() => {
+                            console.log(
+                              "⚠️ [DEBUG] Image failed to load:",
+                              item.node.image.uri
+                            );
+                          }}
+                        />
+                      </Pressable>
+                    </View>
+                  );
+                }}
+              />
+            )}
           </Animated.View>
-        )}
+        )} */}
       </View>
     </AnimatedScreen>
   );

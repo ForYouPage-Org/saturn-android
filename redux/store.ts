@@ -73,37 +73,17 @@ const whitelist = ["prefs", "user"];
 console.log("🔍 [PERSIST] Whitelist configuration:", whitelist);
 
 const persistConfig: PersistConfig<
-  CombinedState<{
-    routes: Route;
-    prefs: Prefs;
-    bottomSheet: BottomSheet;
-    post: postState;
-    searchPost: postState;
-    toast: ToastState;
-    user: UserState;
-    online: { ids: Array<string> };
-    followers: FollowerState;
-    searchPeople: personState;
-    loadingModal: LoadingModal;
-    followedPost: postState;
-    audio: any;
-    chatlist: ChatList;
-    currentPage: {
-      page: string | null;
-    };
-    [chatApi.reducerPath]: any;
-    [authApi.reducerPath]: any;
-    [userApi.reducerPath]: any;
-    [servicesApi.reducerPath]: any;
-    [postsApi.reducerPath]: any;
-    [mediaApi.reducerPath]: any;
-  }>
+  ReturnType<typeof reducer>,
+  any,
+  any,
+  any
 > = {
   key: "root",
   storage: reduxStorage,
-  whitelist, // 🔒 DYNAMIC: Don't persist user state in development
-  transforms: [userTransform],
-  debug: true, // Enable debug logging
+  whitelist,
+  transforms: [userTransform], // ✅ Register the transform
+  version: 1, // 🔧 Increment version to invalidate old cache
+  debug: true,
 };
 
 const reducer = combineReducers({
