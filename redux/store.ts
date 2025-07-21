@@ -71,10 +71,7 @@ const userTransform = createTransform(
   { whitelist: ["user"] }
 );
 
-// 🔒 CRITICAL FIX: Don't persist user state when DEV_AUTO_LOGIN is enabled to prevent race conditions
-const whitelist = isFeatureEnabled("DEV_AUTO_LOGIN")
-  ? ["prefs"] // Only persist preferences in development
-  : ["prefs", "user"]; // Persist both in production
+const whitelist = ["prefs", "user"];
 
 console.log("🔍 [PERSIST] Whitelist configuration:", whitelist);
 
@@ -138,6 +135,16 @@ const reducer = combineReducers({
 });
 const persistedReducer = persistReducer(persistConfig, reducer);
 
+const rehydrationLogger = (store) => (next) => (action) => {
+  if (action.type === REHYDRATE) {
+    console.log(
+      "✅ [REDUX-PERSIST VALIDATION] Rehydration complete. Payload:",
+      action.payload
+    );
+  }
+  return next(action);
+};
+
 export const store = configureStore({
   reducer: persistedReducer,
   middleware: (getDefaultMiddleware) =>
@@ -148,6 +155,7 @@ export const store = configureStore({
         ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
       },
     })
+      .concat(rehydrationLogger)
       .concat(authApi.middleware)
       .concat(userApi.middleware)
       .concat(servicesApi.middleware)
