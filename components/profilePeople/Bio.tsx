@@ -50,13 +50,13 @@ export default function Bio({
 
       if (wasFollowed) {
         // Unfollow
-        await unfollowUser({ id }).unwrap();
+        await unfollowUser({ id, username: userTag }).unwrap();
         if (followers) {
           setFollowers(followers - 1);
         }
       } else {
         // Follow
-        await followUser({ id }).unwrap();
+        await followUser({ id, username: userTag }).unwrap();
         if (followers) {
           setFollowers(followers + 1);
         }

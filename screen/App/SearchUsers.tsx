@@ -4,6 +4,7 @@ import { useEffect, useLayoutEffect, useState } from "react";
 
 import useGetMode from "../../hooks/GetMode";
 import { useLazySearchActorsQuery } from "../../redux/api/user";
+import { useAppSelector } from "../../redux/hooks/hooks";
 import Animated, {
   FadeInRight,
   FadeInUp,
@@ -28,6 +29,7 @@ import { Image } from "expo-image";
 export default function SearchUsers({ navigation }: SearchUserProp) {
   const dark = useGetMode();
   const tint = dark ? "dark" : "light";
+  const user = useAppSelector((state) => state.user);
 
   const [getPersons, persons] = useLazySearchActorsQuery();
 
@@ -123,7 +125,7 @@ export default function SearchUsers({ navigation }: SearchUserProp) {
               userName={item.username}
               name={item.preferredUsername || item.username}
               imageUri={undefined} // iconUrl not available in search response
-              isFollowed={false} // Not provided in search response
+              isFollowed={user.data?.following?.includes(item.id) || false}
             />
           </Pressable>
         )}

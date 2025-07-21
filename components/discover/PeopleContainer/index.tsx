@@ -46,9 +46,9 @@ export default function PeopleContainer({
       setFollow(!follow);
       
       if (wasFollowed) {
-        await unfollowUser({ id }).unwrap();
+        await unfollowUser({ id, username: userName }).unwrap();
       } else {
-        await followUser({ id }).unwrap();
+        await followUser({ id, username: userName }).unwrap();
       }
     } catch (error) {
       console.error("Follow/unfollow error:", error);

@@ -12,6 +12,10 @@ import { ProfileIcon } from "../icons";
 import useSocket from "../../hooks/Socket";
 import { useAppDispatch, useAppSelector } from "../../redux/hooks/hooks";
 import { addToChatList } from "../../redux/slice/chat/chatlist";
+import {
+  useFollowUserMutation,
+  useUnfollowUserMutation,
+} from "../../redux/api/user";
 import { Image } from "expo-image";
 
 const { width } = Dimensions.get("window");
@@ -34,6 +38,9 @@ export default function UserContainer({
   const socket = useSocket();
   const user = useAppSelector((state) => state?.user?.data);
   const [isOpen, setIsOpen] = useState(false);
+  const [follow, setFollow] = useState(() => isFollowed);
+  const [followUser] = useFollowUserMutation();
+  const [unfollowUser] = useUnfollowUserMutation();
 
   const closeModal = () => {
     setIsOpen(false);
@@ -43,6 +50,30 @@ export default function UserContainer({
     socket?.emit("startChat", id);
     setIsOpen(true);
   };
+
+  const handleFollow = async () => {
+    try {
+      const wasFollowed = follow;
+      setFollow(!follow);
+      
+      if (wasFollowed) {
+        await unfollowUser({ id, username: userName }).unwrap();
+      } else {
+        await followUser({ id, username: userName }).unwrap();
+      }
+    } catch (error) {
+      console.error("Follow/unfollow error:", error);
+      // Revert state on error
+      setFollow(follow);
+    }
+  };
+
+  const isMe = user?.userName === userName;
+
+  // Update local state when Redux state changes
+  useEffect(() => {
+    setFollow(isFollowed);
+  }, [isFollowed]);
 
   useEffect(() => {
     socket?.on("hello", (hello) => {
@@ -140,31 +171,60 @@ export default function UserContainer({
           </View>
         </View>
 
-        <View
-          style={{
-            borderRadius: 999,
-            borderWidth: 1,
-            backgroundColor: "transparent",
-            overflow: "hidden",
-            borderColor: fbuttonBackgroundColor,
-          }}
-        >
-          <Pressable
-            android_ripple={{ color: "white" }}
-            onPress={handleMessage}
-            style={{ paddingHorizontal: 10, paddingVertical: 6 }}
-          >
-            <Text
+        {!isMe && (
+          <View style={{ flexDirection: "row", gap: 8 }}>
+            <View
               style={{
-                fontFamily: "jakara",
-                color: fBColor,
-                includeFontPadding: false,
+                borderRadius: 999,
+                borderWidth: 1,
+                backgroundColor: follow ? fbuttonBackgroundColor : "transparent",
+                overflow: "hidden",
+                borderColor: fbuttonBackgroundColor,
               }}
             >
-              {"Message"}
-            </Text>
-          </Pressable>
-        </View>
+              <Pressable
+                android_ripple={{ color: "white" }}
+                onPress={handleFollow}
+                style={{ paddingHorizontal: 10, paddingVertical: 6 }}
+              >
+                <Text
+                  style={{
+                    fontFamily: "jakara",
+                    color: !follow ? fBColor : "white",
+                    includeFontPadding: false,
+                  }}
+                >
+                  {follow ? "Following" : "Follow"}
+                </Text>
+              </Pressable>
+            </View>
+            <View
+              style={{
+                borderRadius: 999,
+                borderWidth: 1,
+                backgroundColor: "transparent",
+                overflow: "hidden",
+                borderColor: fbuttonBackgroundColor,
+              }}
+            >
+              <Pressable
+                android_ripple={{ color: "white" }}
+                onPress={handleMessage}
+                style={{ paddingHorizontal: 10, paddingVertical: 6 }}
+              >
+                <Text
+                  style={{
+                    fontFamily: "jakara",
+                    color: fBColor,
+                    includeFontPadding: false,
+                  }}
+                >
+                  {"Message"}
+                </Text>
+              </Pressable>
+            </View>
+          </View>
+        )}
       </Animated.View>
     </>
   );
