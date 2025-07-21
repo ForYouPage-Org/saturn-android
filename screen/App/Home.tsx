@@ -28,14 +28,6 @@ export default function Home({ navigation }: DrawerHomeProp) {
   // useGetRandomPostsQuery(null);
   // useGetRandomPeopleQuery(null);
 
-  const userAuthValidate = useTokenValidQuery(null);
-  useEffect(() => {
-    //@ts-ignore
-    if (userAuthValidate.isError) {
-      dispatch(signOut());
-    }
-  }, [userAuthValidate]);
-
   const ref = useRef<any>(null);
   useLayoutEffect(() => {
     navigation.setOptions({

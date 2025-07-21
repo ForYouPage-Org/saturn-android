@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useAppDispatch, useAppSelector } from "../redux/hooks/hooks";
-import { clearUserData, loginSuccess } from "../redux/slice/user";
-import { setRoute } from "../redux/slice/routes";
+import { clearUserData, setStatus } from "../redux/slice/user";
 import { isFeatureEnabled } from "../config/featureFlags";
 
 /**
@@ -22,6 +21,7 @@ const AuthManager = () => {
   useEffect(() => {
     const initializeAuth = async () => {
       console.log("🔒 [AuthManager] Starting authentication initialization...");
+      dispatch(setStatus("loading"));
 
       // Critical: Wait for Redux Persist to rehydrate
       if (!persistedState?.rehydrated) {
@@ -42,26 +42,26 @@ const AuthManager = () => {
           const isExpired = tokenPayload.exp * 1000 < Date.now();
 
           if (isExpired) {
-            console.log(
-              "🔒 [AuthManager] Token expired, clearing user data and routing to Auth."
-            );
-            dispatch(clearUserData());
-            dispatch(setRoute({ route: "Auth" }));
+            console.log("🔒 [AuthManager] Token expired, clearing user data.");
+            dispatch(clearUserData()); // This action now sets status to 'unauthenticated'
           } else {
-            console.log("🔒 [AuthManager] Token valid, routing to App.");
-            dispatch(setRoute({ route: "App" }));
+            console.log(
+              "🔒 [AuthManager] Token valid, setting status to authenticated."
+            );
+            dispatch(setStatus("authenticated"));
           }
         } catch (error) {
           console.log(
             "🔒 [AuthManager] Invalid token format, clearing user data."
           );
-          dispatch(clearUserData());
-          dispatch(setRoute({ route: "Auth" }));
+          dispatch(clearUserData()); // This action now sets status to 'unauthenticated'
         }
       } else {
-        // No persisted data - route to authentication
-        console.log("🔒 [AuthManager] No persisted data, routing to Auth.");
-        dispatch(setRoute({ route: "Auth" }));
+        // No persisted data - the user is unauthenticated.
+        console.log(
+          "🔒 [AuthManager] No persisted data, setting status to unauthenticated."
+        );
+        dispatch(setStatus("unauthenticated"));
       }
 
       setAuthInitialized(true);

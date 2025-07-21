@@ -53,14 +53,12 @@ import { setRoute } from "../../../redux/slice/routes";
 export default function HomeAll() {
   const dark = useGetMode();
   const dispatch = useAppDispatch();
-  const authId = useAppSelector((state) => state.user.data?.id);
-  const userToken = useAppSelector((state) => state.user.token);
-  const fullUserState = useAppSelector((state) => state.user);
-
-  console.log("🏠 [DEBUG] HomeAll - Full user state:", fullUserState);
-  console.log("🏠 [DEBUG] HomeAll - authId:", authId);
-  console.log("🏠 [DEBUG] HomeAll - userToken:", userToken ? "EXISTS" : "NULL");
-
+  const {
+    data: feedData,
+    isLoading,
+    error,
+    refetch,
+  } = useGetFeedQuery({ page: 1, limit: 20 });
   const isDark = dark;
   const color = isDark ? "white" : "black";
   const backgroundColor = !isDark ? "white" : "black";
@@ -71,13 +69,6 @@ export default function HomeAll() {
 
   const [noMore, setNoMore] = useState(false);
 
-  const {
-    data: feedData,
-    isLoading,
-    error,
-    refetch,
-  } = useGetFeedQuery({ page: 1, limit: 20 });
-
   console.log("🏠 [DEBUG] useGetFeedQuery state:");
   console.log("🏠 [DEBUG] - isLoading:", isLoading);
   console.log("🏠 [DEBUG] - error:", error);
@@ -86,7 +77,6 @@ export default function HomeAll() {
   const [refreshing, setRefreshing] = React.useState(false);
   // Feed is automatically loaded by useGetFeedQuery
   const onRefresh = useCallback(() => {
-    if (!authId) return;
     setRefreshing(true);
     refetch()
       .then(() => {
@@ -98,7 +88,7 @@ export default function HomeAll() {
           openToast({ text: "Couldn't get recent posts", type: "Failed" })
         );
       });
-  }, [authId, dispatch, refetch]);
+  }, [dispatch, refetch]);
 
   const renderFooter = () => {
     if (feedData?.hasMore === false) {
@@ -262,7 +252,6 @@ export default function HomeAll() {
   console.log("🏠 [DEBUG] HomeAll render - posts.length:", posts.length);
   console.log("🏠 [DEBUG] HomeAll render - feedData:", feedData);
   console.log("🏠 [DEBUG] HomeAll render - error:", error);
-  console.log("🏠 [DEBUG] HomeAll render - authId:", authId);
 
   return (
     <View style={{ flex: 1 }}>
@@ -270,67 +259,6 @@ export default function HomeAll() {
         <>
           {console.log("🏠 [DEBUG] Rendering SkeletonGroupPost")}
           <SkeletonGroupPost />
-        </>
-      ) : error && error.status === 401 ? (
-        <>
-          {console.log(
-            "🏠 [DEBUG] Rendering login prompt - user not authenticated"
-          )}
-          <View
-            style={{
-              flex: 1,
-              justifyContent: "center",
-              alignItems: "center",
-              paddingHorizontal: 20,
-            }}
-          >
-            <Text
-              style={{
-                color,
-                fontSize: 18,
-                fontFamily: "mulishBold",
-                textAlign: "center",
-                marginBottom: 10,
-              }}
-            >
-              Welcome to Saturn! 🪐
-            </Text>
-            <Text
-              style={{
-                color,
-                fontSize: 14,
-                fontFamily: "mulish",
-                textAlign: "center",
-                marginBottom: 20,
-                opacity: 0.7,
-              }}
-            >
-              Please log in to see posts and connect with others
-            </Text>
-            <Pressable
-              onPress={() => {
-                console.log("🔐 [DEBUG] Login button pressed, routing to Auth");
-                dispatch(setRoute({ route: "Auth" }));
-              }}
-              style={{
-                backgroundColor: color,
-                paddingHorizontal: 30,
-                paddingVertical: 12,
-                borderRadius: 25,
-                alignItems: "center",
-              }}
-            >
-              <Text
-                style={{
-                  color: !dark ? "white" : "black",
-                  fontSize: 16,
-                  fontFamily: "mulishBold",
-                }}
-              >
-                Log In
-              </Text>
-            </Pressable>
-          </View>
         </>
       ) : posts.length === 0 ? (
         <>

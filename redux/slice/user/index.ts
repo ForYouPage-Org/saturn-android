@@ -38,6 +38,9 @@ const user = createSlice({
       state.status = "unauthenticated";
       state.token = null;
     },
+    setStatus: (state, action: PayloadAction<UserState["status"]>) => {
+      state.status = action.payload;
+    },
   },
   // Note: Extra reducers moved to avoid circular dependencies
   // API state management will be handled directly by RTK Query
@@ -45,4 +48,4 @@ const user = createSlice({
 
 export default user.reducer;
 
-export const { loginSuccess, signOut, clearUserData } = user.actions;
+export const { loginSuccess, signOut, clearUserData, setStatus } = user.actions;

@@ -394,6 +394,7 @@ const Navigation = () => {
   useGetFollowDetailsQuery(null);
 
   const netInfo = useNetInfo();
+  const authStatus = useAppSelector((state) => state.user.status);
 
   const barColor = !dark ? "black" : "white";
   useEffect(() => {
@@ -439,15 +440,14 @@ const Navigation = () => {
     jakara: require("./assets/fonts/PlusJakartaSans-Medium.ttf"),
   });
 
-  // 🔧 MVP: Authentication flow is now handled by AuthManager
-  const { route } = useAppSelector((state) => state.routes) || {};
-  const { status: authStatus } = useAppSelector((state) => state.user);
+  // 🔧 MVP: Authentication flow is now handled by AuthManager which sets user.status
+  // The UI below simply reacts to that status.
 
   const renderRoute = () => {
-    // While the app is initializing and we don't know the auth state,
-    // show nothing or a splash screen.
-    if (authStatus === "loading" || authStatus === "idle") {
-      // In a real app, you'd return a dedicated splash screen component.
+    // While the app is initializing, show a splash screen or nothing
+    if (authStatus === "idle" || authStatus === "loading") {
+      // In a real app, you would return a dedicated splash screen component.
+      // Returning null for now to keep the screen blank during this phase.
       return null;
     }
 
@@ -459,7 +459,7 @@ const Navigation = () => {
       );
     }
 
-    // For any other status ('unauthenticated', 'error'), show the Auth flow.
+    // For 'unauthenticated' or 'error' status, show the Auth flow.
     return (
       <FadeInView style={{ flex: 1 }}>
         <Auth />
