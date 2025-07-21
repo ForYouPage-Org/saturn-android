@@ -1,4 +1,4 @@
-import { View, Text, Dimensions, FlatList } from "react-native";
+import { View, Text, Dimensions, FlatList, Pressable } from "react-native";
 
 import { useEffect, useLayoutEffect, useState } from "react";
 
@@ -101,13 +101,31 @@ export default function SearchUsers({ navigation }: SearchUserProp) {
           paddingHorizontal: 10,
         }}
         renderItem={({ item }) => (
-          <UserContainer
-            id={item.id}
-            userName={item.username}
-            name={item.preferredUsername || item.username}
-            imageUri={undefined} // iconUrl not available in search response
-            isFollowed={false} // Not provided in search response
-          />
+          <Pressable
+            onPress={() => {
+              console.log(
+                "🔍 [SearchUsers] Navigating to profile with params:",
+                item
+              );
+              navigation.navigate("ProfilePeople", {
+                id: item.id,
+                name: item.preferredUsername || item.username,
+                userTag: item.username,
+                verified: false, // Not available in search result
+                imageUri: `https://ui-avatars.com/api/?name=${
+                  item.preferredUsername || item.username
+                }&background=random`,
+              })
+            }
+          >
+            <UserContainer
+              id={item.id}
+              userName={item.username}
+              name={item.preferredUsername || item.username}
+              imageUri={undefined} // iconUrl not available in search response
+              isFollowed={false} // Not provided in search response
+            />
+          </Pressable>
         )}
         keyExtractor={(item) => item.id.toString()}
       />

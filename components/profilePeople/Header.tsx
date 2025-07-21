@@ -38,6 +38,13 @@ export default function Header({
   verified: boolean;
   id: string;
 }) {
+  console.log("👤 [Header] Received props:", {
+    id,
+    userTag,
+    name,
+    verified,
+    imageUri,
+  });
   const user = useAppSelector((state) => state.user);
   const [followUser] = useFollowUserMutation();
   const [unfollowUser] = useUnfollowUserMutation();
@@ -77,11 +84,11 @@ export default function Header({
   };
 
   const handleFollow = () => {
-    followUser({ id });
+    followUser({ id, username: userTag });
   };
 
   const handleUnfollow = () => {
-    unfollowUser({ id });
+    unfollowUser({ id, username: userTag });
   };
 
   // Simple check to see if the current user is already following this person

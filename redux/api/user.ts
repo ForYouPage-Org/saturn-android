@@ -147,12 +147,15 @@ export const userApi = createApi({
     // 🔧 MVP: Mock follow functionality (until backend implements follow endpoints)
     followUser: builder.mutation<
       { status: "success"; message: string },
-      { id: string }
+      { id: string; username: string }
     >({
-      query: ({ id }) => ({
-        url: `/actors/${id}/follow`,
-        method: "POST",
-      }),
+      query: ({ username }) => {
+        console.log("🔒 [API] Calling followUser with username:", username);
+        return {
+          url: `/actors/${username}/follow`,
+          method: "POST",
+        };
+      },
       async onQueryStarted({ id }, { dispatch, queryFulfilled }) {
         // Optimistic update
         const patchResult = dispatch(
@@ -172,12 +175,15 @@ export const userApi = createApi({
     // 🔧 MVP: Mock unfollow functionality (until backend implements follow endpoints)
     unfollowUser: builder.mutation<
       { status: "success"; message: string },
-      { id: string }
+      { id: string; username: string }
     >({
-      query: ({ id }) => ({
-        url: `/actors/${id}/follow`,
-        method: "DELETE",
-      }),
+      query: ({ username }) => {
+        console.log("🔒 [API] Calling unfollowUser with username:", username);
+        return {
+          url: `/actors/${username}/follow`,
+          method: "DELETE",
+        };
+      },
       async onQueryStarted({ id }, { dispatch, queryFulfilled }) {
         // Optimistic update
         const patchResult = dispatch(

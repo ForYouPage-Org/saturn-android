@@ -15,6 +15,7 @@ export default function ProfilePeople({
 }: ProfilePeopleProp) {
   const offset = useRef(new Animated.Value(0)).current;
   const { id } = route.params;
+  console.log("👤 [ProfilePeople] Received route params:", route.params);
   return (
     <AnimatedScreen>
       <ExpoStatusBar style="light" backgroundColor="transparent" />
