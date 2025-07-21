@@ -149,15 +149,22 @@ export const userApi = createApi({
       { status: "success"; message: string },
       { id: string }
     >({
-      queryFn: async ({ id }) => {
-        // Mock implementation - just return success
-        console.log("🔧 MVP: Mock follow user:", id);
-        return {
-          data: {
-            status: "success" as const,
-            message: `Successfully followed user ${id}`,
-          },
-        };
+      query: ({ id }) => ({
+        url: `/actors/${id}/follow`,
+        method: "POST",
+      }),
+      async onQueryStarted({ id }, { dispatch, queryFulfilled }) {
+        // Optimistic update
+        const patchResult = dispatch(
+          userApi.util.updateQueryData("getUser", null, (draft) => {
+            draft.following.push(id);
+          })
+        );
+        try {
+          await queryFulfilled;
+        } catch {
+          patchResult.undo();
+        }
       },
       invalidatesTags: ["guest", "user"],
     }),
@@ -167,15 +174,22 @@ export const userApi = createApi({
       { status: "success"; message: string },
       { id: string }
     >({
-      queryFn: async ({ id }) => {
-        // Mock implementation - just return success
-        console.log("🔧 MVP: Mock unfollow user:", id);
-        return {
-          data: {
-            status: "success" as const,
-            message: `Successfully unfollowed user ${id}`,
-          },
-        };
+      query: ({ id }) => ({
+        url: `/actors/${id}/follow`,
+        method: "DELETE",
+      }),
+      async onQueryStarted({ id }, { dispatch, queryFulfilled }) {
+        // Optimistic update
+        const patchResult = dispatch(
+          userApi.util.updateQueryData("getUser", null, (draft) => {
+            draft.following = draft.following.filter((userId) => userId !== id);
+          })
+        );
+        try {
+          await queryFulfilled;
+        } catch {
+          patchResult.undo();
+        }
       },
       invalidatesTags: ["guest", "user"],
     }),
