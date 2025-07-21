@@ -84,10 +84,20 @@ export default function Header({
   };
 
   const handleFollow = () => {
+    console.log("🔍 [Header] handleFollow called with:", { id, userTag });
+    if (!userTag) {
+      console.error("❌ [Header] userTag is undefined, cannot follow user");
+      return;
+    }
     followUser({ id, username: userTag });
   };
 
   const handleUnfollow = () => {
+    console.log("🔍 [Header] handleUnfollow called with:", { id, userTag });
+    if (!userTag) {
+      console.error("❌ [Header] userTag is undefined, cannot unfollow user");
+      return;
+    }
     unfollowUser({ id, username: userTag });
   };
 
@@ -107,9 +117,11 @@ export default function Header({
         }}
       >
         {isFollowing ? (
-          <ButtonOutlined text="Unfollow" handleFollow={handleUnfollow} />
+          <ButtonOutlined id={id} followed={true} handleFollow={handleUnfollow} />
         ) : (
-          <Button text="Follow" handleFollow={handleFollow} />
+          <Button onPress={handleFollow} loading={false}>
+            <Text style={{ color: "white", fontFamily: "jakaraBold" }}>Follow</Text>
+          </Button>
         )}
       </View>
       <ViewProfilePhoto

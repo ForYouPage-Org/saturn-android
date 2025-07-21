@@ -115,8 +115,8 @@ export default function SearchUsers({ navigation }: SearchUserProp) {
                 imageUri: `https://ui-avatars.com/api/?name=${
                   item.preferredUsername || item.username
                 }&background=random`,
-              })
-            }
+              });
+            }}
           >
             <UserContainer
               id={item.id}

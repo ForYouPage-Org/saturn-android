@@ -14,13 +14,21 @@ export default function ProfilePeople({
   route,
 }: ProfilePeopleProp) {
   const offset = useRef(new Animated.Value(0)).current;
-  const { id } = route.params;
+  const { id, userTag, name, verified, imageUri } = route.params;
   console.log("👤 [ProfilePeople] Received route params:", route.params);
+  console.log("👤 [ProfilePeople] Individual params:", { id, userTag, name, verified, imageUri });
   return (
     <AnimatedScreen>
       <ExpoStatusBar style="light" backgroundColor="transparent" />
       <View style={{ flex: 1 }}>
-        <Header animatedValue={offset} {...route.params} />
+        <Header
+          animatedValue={offset}
+          id={id}
+          userTag={userTag}
+          name={name}
+          verified={verified}
+          imageUri={imageUri}
+        />
         <PeoplePosts offset={offset} {...route.params} />
       </View>
     </AnimatedScreen>
