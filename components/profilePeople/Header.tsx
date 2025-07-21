@@ -15,6 +15,10 @@ import { ProfileIcon } from "../icons";
 import useGetMode from "../../hooks/GetMode";
 import { useNavigation } from "@react-navigation/native";
 import { useState } from "react";
+import {
+  useFollowUserMutation,
+  useUnfollowUserMutation,
+} from "../../redux/api/user";
 
 import { PeopleProfileNavigationProp } from "../../types/navigation";
 import { ViewProfilePhoto } from "./ViewProfilePhoto";
@@ -25,14 +29,18 @@ export default function Header({
   userTag,
   name,
   verified,
+  id,
 }: {
   animatedValue: Animated.Value;
   imageUri: string;
   userTag: string;
   name: string;
   verified: boolean;
+  id: string;
 }) {
   const user = useAppSelector((state) => state.user);
+  const [followUser] = useFollowUserMutation();
+  const [unfollowUser] = useUnfollowUserMutation();
   const navigation = useNavigation<PeopleProfileNavigationProp>();
   const HEADER_HEIGHT = 100;
 
@@ -68,10 +76,40 @@ export default function Header({
     setIsOpen(!isOpen);
   };
 
-  console.log("rocket",user.data?.imageUri)
+  const handleFollow = () => {
+    followUser({ id });
+  };
+
+  const handleUnfollow = () => {
+    unfollowUser({ id });
+  };
+
+  // Simple check to see if the current user is already following this person
+  const isFollowing = user.data?.following?.includes(id);
+
+  console.log("rocket", user.data?.imageUri);
   return (
     <>
-    <ViewProfilePhoto isOpen={isOpen} closeModal={handleSetOpen} imageUri={imageUri} />
+      <View
+        style={{
+          position: "absolute",
+          top: 60,
+          right: 20,
+          zIndex: 999,
+          width: 120,
+        }}
+      >
+        {isFollowing ? (
+          <ButtonOutlined text="Unfollow" handleFollow={handleUnfollow} />
+        ) : (
+          <Button text="Follow" handleFollow={handleFollow} />
+        )}
+      </View>
+      <ViewProfilePhoto
+        isOpen={isOpen}
+        closeModal={handleSetOpen}
+        imageUri={imageUri}
+      />
       <Animated.View
         style={[
           { height: 300, width: "100%" },
@@ -146,7 +184,7 @@ export default function Header({
             alignItems: "center",
           }}
           onPress={() => {
-            setIsOpen(true)
+            setIsOpen(true);
           }}
         >
           {user?.data?.imageUri ? (
