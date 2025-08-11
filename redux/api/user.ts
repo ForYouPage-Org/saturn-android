@@ -7,6 +7,7 @@ import {
   Notifications,
 } from "../../types/api";
 import storage from "../storage";
+import { followUser as followUserAction, unfollowUser as unfollowUserAction } from "../slice/user/followers"; // Add this import
 
 interface loginResult {
   msg: string;
@@ -134,16 +135,17 @@ export const userApi = createApi({
       invalidatesTags: ["user"],
     }),
     // 🚫 MVP: Add missing followers list functionality
-    getFollowersList: builder.query<{ followers: any[] }, null>({
-      query: () => "/user/followers", // Keep this as fallback until backend implements
+    getFollowersList: builder.query<{ followers: any[] }, { username: string }>({
+      query: ({ username }) => `/actors/${username}/followers`, // Updated to match backend endpoint
       providesTags: ["user"],
     }),
     // 🚫 MVP: Add missing following list functionality
-    getFollowingList: builder.query<{ following: any[] }, null>({
-      query: () => "/user/following", // Keep this as fallback until backend implements
+    getFollowingList: builder.query<{ following: any[] }, { username: string }>({
+      query: ({ username }) => `/user/${username}/following`, // Keep this as fallback until backend implements
       providesTags: ["user"],
     }),
 
+    //STEP 2.2: API call to follow user and a dispatach to update state 
     // 🔧 MVP: Mock follow functionality (until backend implements follow endpoints)
     followUser: builder.mutation<
       { status: "success"; message: string },
@@ -156,21 +158,41 @@ export const userApi = createApi({
           method: "POST",
         };
       },
-      async onQueryStarted({ id }, { dispatch, queryFulfilled }) {
-        // Optimistic update
-        const patchResult = dispatch(
-          userApi.util.updateQueryData("getUser", null, (draft) => {
-            draft.following.push(id);
-          })
-        );
+      async onQueryStarted({ id, username }, { dispatch, queryFulfilled }) {
+    // Update both states optimistically
+    const patchResult = dispatch(
+      userApi.util.updateQueryData("getUser", null, (draft) => {
+        draft.following.push(id);
+      })
+    );
+    dispatch(followUserAction(id)); // ← Also update followers.ts
+    
         try {
-          await queryFulfilled;
-        } catch {
+          const result = await queryFulfilled;
+          console.log("✅ [API] Follow user successful:", username, result.data);
+          
+          // Fetch updated followers list after successful follow
+          try {
+            console.log("📋 [API] Calling getFollowersList with username:", username);
+            const followersListResult = await dispatch(userApi.endpoints.getFollowersList.initiate({ username }));
+            console.log("📋 [API] getFollowersList full result:", followersListResult);
+            console.log("📋 [API] getFollowersList data:", followersListResult.data);
+            console.log("📋 [API] getFollowersList error:", followersListResult.error);
+            console.log("📋 [API] getFollowersList isSuccess:", followersListResult.isSuccess);
+            console.log("📋 [API] getFollowersList isError:", followersListResult.isError);
+            console.log("📋 [API] Updated followers list after follow:", followersListResult.data);
+          } catch (followersError) {
+            console.error("❌ [API] Error fetching followers list:", followersError);
+          }
+
+        } catch (error) {
+          console.error("❌ [API] Follow user failed:", username, error);
           patchResult.undo();
         }
       },
       invalidatesTags: ["guest", "user"],
     }),
+    //followUser ends here
 
     // 🔧 MVP: Mock unfollow functionality (until backend implements follow endpoints)
     unfollowUser: builder.mutation<
@@ -184,16 +206,19 @@ export const userApi = createApi({
           method: "DELETE",
         };
       },
-      async onQueryStarted({ id }, { dispatch, queryFulfilled }) {
-        // Optimistic update
-        const patchResult = dispatch(
-          userApi.util.updateQueryData("getUser", null, (draft) => {
-            draft.following = draft.following.filter((userId) => userId !== id);
-          })
-        );
+      async onQueryStarted({ id, username }, { dispatch, queryFulfilled }) {
+    // Update both states optimistically
+      const patchResult = dispatch(
+      userApi.util.updateQueryData("getUser", null, (draft) => {
+        draft.following = draft.following.filter((userId) => userId !== id);
+      })
+    );
+    dispatch(unfollowUserAction(id)); // ← Also update followers.ts
         try {
-          await queryFulfilled;
-        } catch {
+          const result = await queryFulfilled;
+          console.log("✅ [API] Unfollow user successful:", username, result.data);
+        } catch (error) {
+          console.error("❌ [API] Unfollow user failed:", username, error);
           patchResult.undo();
         }
       },
