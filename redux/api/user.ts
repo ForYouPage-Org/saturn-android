@@ -15,6 +15,20 @@ interface loginResult {
   data: IUSerData;
 }
 
+//RAGHAVI ADDED: Data structures to define follow type and response 
+export interface Follow {
+  id: string;
+  username: string;
+  preferredUsername: string;
+  displayName?: string;
+  iconUrl?: string;
+}
+
+export interface FollowResponse {
+  status: "success";
+  followers: Follow[];
+  hasMore: boolean;
+}
 export const userApi = createApi({
   reducerPath: "userApi",
   baseQuery: fetchBaseQuery({
@@ -134,18 +148,39 @@ export const userApi = createApi({
       },
       invalidatesTags: ["user"],
     }),
-    // 🚫 MVP: Add missing followers list functionality
-    getFollowersList: builder.query<{ followers: any[] }, { username: string }>({
-      query: ({ username }) => `/actors/${username}/followers`, // Updated to match backend endpoint
-      providesTags: ["user"],
+    // // 🚫 MVP: Add missing followers list functionality
+    // getFollowersList: builder.query<{ followers: any[] }, { username: string }>({
+    //   query: ({ username }) => `/actors/${username}/followers`, // Updated to match backend endpoint
+    //   providesTags: ["user"],
+    // }),
+    // // 🚫 MVP: Add missing following list functionality
+    // getFollowingList: builder.query<{ following: any[] }, { username: string }>({
+    //   query: ({ username }) => `/user/${username}/following`, // Keep this as fallback until backend implements
+    //   providesTags: ["user"],
+    // }),
+    //RAGHAVI ADDED: updating API calls for getFollowing & getFollowers
+    getFollowersList: builder.query<FollowResponse, { username: string, page?: number; limit?: number }>({
+      query: ({ username, page = 1, limit = 20 } = {}) => {
+        console.log("🌐 [DEBUG] getFeed query called with:", { page, limit });
+        console.log(
+          "🌐 [DEBUG] API URL:",
+          `${process.env.EXPO_PUBLIC_API_URL}/api`
+        );
+        return {
+          url: "/posts",
+          method: "GET",
+          params: { page, limit },
+        };
+      },
+      providesTags: ["Post"],
     }),
-    // 🚫 MVP: Add missing following list functionality
-    getFollowingList: builder.query<{ following: any[] }, { username: string }>({
-      query: ({ username }) => `/user/${username}/following`, // Keep this as fallback until backend implements
-      providesTags: ["user"],
-    }),
-
-    //STEP 2.2: API call to follow user and a dispatach to update state 
+    
+    
+    
+    
+    
+    
+      //STEP 2.2: API call to follow user and a dispatach to update state 
     // 🔧 MVP: Mock follow functionality (until backend implements follow endpoints)
     followUser: builder.mutation<
       { status: "success"; message: string },

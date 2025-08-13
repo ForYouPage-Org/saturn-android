@@ -24,7 +24,7 @@ import { FlashList } from "@shopify/flash-list";
 import AnimatedScreen from "../../../components/global/AnimatedScreen";
 import useGetMode from "../../../hooks/GetMode";
 import { useAppDispatch, useAppSelector } from "../../../redux/hooks/hooks";
-import { useGetUserQuery, useTokenValidQuery, useGetFollowingListQuery } from "../../../redux/api/user";
+import { useGetUserQuery, useTokenValidQuery, useGetFollowingListQuery, userGetFollowerListQuery } from "../../../redux/api/user";
 import { signOut } from "../../../redux/slice/user";
 import { setFollowedUsers } from "../../../redux/slice/user/followers";
 import { ActivityIndicator } from "react-native-paper";
@@ -56,35 +56,31 @@ export default function HomeAll() {
   const dispatch = useAppDispatch();
   const user = useAppSelector((state) => state?.user?.data);
   
-  const {
-    data: feedData,
-    isLoading,
-    error,
-    refetch,
-  } = useGetFeedQuery({ page: 1, limit: 20 });
+ const {
+  data: feedData,
+  isLoading: feedIsLoading,
+  error: feedError,
+  refetch: feedRefetch,
+} = useGetFeedQuery({ page: 1, limit: 20 });
 
-  // Get current user's following list to update Redux state
-  const {
-    data: followingData,
-    isLoading: followingLoading,
-    error: followingError
-  } = useGetFollowingListQuery(
-    { username: user?.userName || "" },
-    { skip: !user?.userName } // Skip if no username available
-  );
+// Following list
+const {
+  data: followingData,
+  isLoading: followingIsLoading,
+  error: followingError,
+  refetch: followingRefetch,
+} = useGetFollowingListQuery({ username: user?.userName || "", page: 1, limit: 20 });
 
-  // Update Redux state with following list when data is loaded
-  useEffect(() => {
-    if (followingData?.following && user?.userName) {
-      console.log("🏠 [HOMEALL] Fetched following list for:", user.userName);
-      console.log("🏠 [HOMEALL] Following data:", followingData.following);
-      
-      const followedUserIds = followingData.following.map((user: any) => user.id);
-      dispatch(setFollowedUsers(followedUserIds));
-      console.log("🏠 [HOMEALL] Updated followed users in Redux:", followedUserIds);
-    }
-  }, [followingData, user?.userName, dispatch]);
+// Followers list
+const {
+  data: followerData,
+  isLoading: followersIsLoading,
+  error: followersError,
+  refetch: followersRefetch,
+} = useGetFollowersListQuery({ username: user?.userName || "", page: 1, limit: 20 });
+  //Print follower 
   
+
   const isDark = dark;
   const color = isDark ? "white" : "black";
   const backgroundColor = !isDark ? "white" : "black";
