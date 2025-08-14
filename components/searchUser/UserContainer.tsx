@@ -12,6 +12,7 @@ import { ProfileIcon } from "../icons";
 import useSocket from "../../hooks/Socket";
 import { useAppDispatch, useAppSelector } from "../../redux/hooks/hooks";
 import { addToChatList } from "../../redux/slice/chat/chatlist";
+import { followUser as followUserAction, unfollowUser as unfollowUserAction } from "../../redux/slice/user/followers";
 import {
   useFollowUserMutation,
   useUnfollowUserMutation,
@@ -36,9 +37,12 @@ export default function UserContainer({
   const fBColor = dark ? "white" : "black";
   const navigation = useNavigation<any>();
   const socket = useSocket();
+  //RAGHAVI ADDED
   const user = useAppSelector((state) => state?.user?.data);
+  const followedUserIds = useAppSelector((state) => state.followers.followedUserIds);
   const [isOpen, setIsOpen] = useState(false);
-  const [follow, setFollow] = useState(() => isFollowed);
+  const isCurrentlyFollowed = followedUserIds.includes(id) || false; //RAGHAVI ADDED
+  
   const [followUser] = useFollowUserMutation();
   const [unfollowUser] = useUnfollowUserMutation();
 
@@ -51,30 +55,38 @@ export default function UserContainer({
     setIsOpen(true);
   };
 
-  const handleFollow = async () => {
-    try {
-      const wasFollowed = follow;
-      setFollow(!follow);
+  //STEP 2: dispactches action that reducer uses to update slice of state
+  // And uses a mutation to call the API to update the backend
+// const handleFollow = async () => {
+//     console.log("🔄 [USERCONTAINER] Follow button clicked! User:", userName, "ID:", id);
+//     console.log("🔄 [USERCONTAINER] Current follow state:", isCurrentlyFollowed);
+//     console.log("🔄 [USERCONTAINER] followedUserIds array:", followedUserIds);
+    
+//     try {
+//       const wasFollowed = isCurrentlyFollowed;
       
-      if (wasFollowed) {
-        await unfollowUser({ id, username: userName }).unwrap();
-      } else {
-        await followUser({ id, username: userName }).unwrap();
-      }
-    } catch (error) {
-      console.error("Follow/unfollow error:", error);
-      // Revert state on error
-      setFollow(follow);
-    }
-  };
+//       // Optimistically update Redux state
+//       if (wasFollowed) {
+//         dispatch(unfollowUserAction(id));
+//         await unfollowUser({ id, username: userName }).unwrap();
+//       } else {
+//         dispatch(followUserAction(id));
+//         await followUser({ id, username: userName }).unwrap();
+//       }
+//     } catch (error) {
+//       console.error("Follow/unfollow error:", error);
+//       // Revert state on error
+//       if (isCurrentlyFollowed) {
+//         dispatch(followUserAction(id));
+//       } else {
+//         dispatch(unfollowUserAction(id));
+//       }
+//     }
+//   };
 
   const isMe = user?.userName === userName;
 
   // Update local state when Redux state changes
-  useEffect(() => {
-    setFollow(isFollowed);
-  }, [isFollowed]);
-
   useEffect(() => {
     socket?.on("hello", (hello) => {
       console.log("😒", hello);
@@ -106,7 +118,8 @@ export default function UserContainer({
       }
     });
   }, [socket]);
-
+  
+  //STEP 1: Component structure
   return (
     <>
       <Portal>
@@ -177,11 +190,12 @@ export default function UserContainer({
               style={{
                 borderRadius: 999,
                 borderWidth: 1,
-                backgroundColor: follow ? fbuttonBackgroundColor : "transparent",
+                backgroundColor: isCurrentlyFollowed ? fbuttonBackgroundColor : "transparent",
                 overflow: "hidden",
                 borderColor: fbuttonBackgroundColor,
               }}
             >
+              {/* // STEP 1.2: Once user clicks follow it calls to dispatch the followUserAction */}
               <Pressable
                 android_ripple={{ color: "white" }}
                 onPress={handleFollow}
@@ -190,11 +204,11 @@ export default function UserContainer({
                 <Text
                   style={{
                     fontFamily: "jakara",
-                    color: !follow ? fBColor : "white",
+                    color: !isCurrentlyFollowed ? fBColor : "blue",
                     includeFontPadding: false,
                   }}
                 >
-                  {follow ? "Following" : "Follow"}
+                  {isCurrentlyFollowed ? "Following" : "Follow"}
                 </Text>
               </Pressable>
             </View>

@@ -3,7 +3,6 @@ import React, { useState } from "react";
 import useGetMode from "../../hooks/GetMode";
 import { getBackgroundColorAsync } from "expo-system-ui";
 import Animated, { BounceIn, BounceOut } from "react-native-reanimated";
-import { useLazyFollowUserQuery } from "../../redux/api/services";
 import { useAppSelector } from "../../redux/hooks/hooks";
 
 export default function FollowUser({
@@ -45,7 +44,7 @@ export default function FollowUser({
             color: followed ? color2 : color,
           }}
         >
-          {followed ? "Following" : "Follow"}
+          {followed ?  "�🔴 FOLLOWUSER FOLLOWING 🔴🔴" : "🟢� UNFOLLOWUSER FOLLOW 🟢🟢"}
         </Text>
       </Pressable>
     </Animated.View>

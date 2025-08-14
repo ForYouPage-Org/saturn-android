@@ -24,7 +24,7 @@ import { FlashList } from "@shopify/flash-list";
 import AnimatedScreen from "../../../components/global/AnimatedScreen";
 import useGetMode from "../../../hooks/GetMode";
 import { useAppDispatch, useAppSelector } from "../../../redux/hooks/hooks";
-import { useGetUserQuery, useTokenValidQuery } from "../../../redux/api/user";
+import { useGetFollowersListQuery,  useGetFollowingListQuery, useTokenValidQuery } from "../../../redux/api/user";
 import { signOut } from "../../../redux/slice/user";
 import { ActivityIndicator } from "react-native-paper";
 import { IPost } from "../../../types/api";
@@ -53,12 +53,33 @@ import { setRoute } from "../../../redux/slice/routes";
 export default function HomeAll() {
   const dark = useGetMode();
   const dispatch = useAppDispatch();
+  const user = useAppSelector((state) => state?.user?.data);
+
   const {
     data: feedData,
     isLoading,
     error,
     refetch,
   } = useGetFeedQuery({ page: 1, limit: 20 });
+
+  const {
+      data: followingData,
+      isLoading: followingIsLoading,
+      error: followingError,
+      refetch: followingRefetch,
+  } = useGetFollowingListQuery({ username: user?.userName || "", page: 1, limit: 20 });
+  
+  // Followers list
+  const {
+    data: followerData,
+    isLoading: followersIsLoading,
+    error: followersError,
+    refetch: followersRefetch,
+  } = useGetFollowersListQuery({ username: user?.userName || "", page: 1, limit: 20 });
+  //Print follower 
+  const following = followingData?.followData || [];
+  console.log("Follower data: ", following);
+
   const isDark = dark;
   const color = isDark ? "white" : "black";
   const backgroundColor = !isDark ? "white" : "black";

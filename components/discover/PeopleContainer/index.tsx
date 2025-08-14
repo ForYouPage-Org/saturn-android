@@ -11,7 +11,8 @@ import {
   useLazyGetFollowDetailsQuery,
   useLazyGetUserQuery,
 } from "../../../redux/api/user";
-import { useAppSelector } from "../../../redux/hooks/hooks";
+import { followUser as followUserAction, unfollowUser as unfollowUserAction } from "../../../redux/slice/user/followers";
+import { useAppDispatch, useAppSelector } from "../../../redux/hooks/hooks";
 import useGetMode from "../../../hooks/GetMode";
 import { ProfileIcon } from "../../icons";
 import { Image } from "expo-image";
@@ -22,16 +23,20 @@ const { width } = Dimensions.get("window");
 export default function PeopleContainer({
   name,
   userName,
-  id,
+  id, //this is the id of the user that our user is trying to follow
   imageUri,
   isFollowed,
 }: IPerson) {
   const [follow, setFollow] = useState(() => isFollowed);
   const user = useAppSelector((state) => state.user);
   const navigation = useNavigation<HomeNavigationProp>();
+
   const [followUser] = useFollowUserMutation();
   const [unfollowUser] = useUnfollowUserMutation();
-
+  const dispatch = useAppDispatch();
+  const followedUserIds = useAppSelector((state) => state.followers.followedUserIds);
+  const isCurrentlyFollowed = followedUserIds.includes(id) || false; //RAGHAVI ADDED
+  
   const dark = useGetMode();
   const color = dark ? "white" : "black";
   const backgroundColor = !dark ? "#E5E9F899" : "#25252599";
@@ -40,20 +45,49 @@ export default function PeopleContainer({
   const nBColor = !dark ? "white" : "black";
   const fBColor = dark ? "white" : "black";
 
-  const handleFollow = async () => {
-    try {
-      const wasFollowed = follow;
-      setFollow(!follow);
+  // const handleFollow = async () => {
+  //   try {
+  //     const wasFollowed = follow;
+  //     setFollow(!follow);
       
+  //     if (wasFollowed) {
+  //       await unfollowUser({ id, username: userName }).unwrap();
+  //     } else {
+  //       await followUser({ id, username: userName }).unwrap();
+  //     }
+  //   } catch (error) {
+  //     console.error("Follow/unfollow error:", error);
+  //     // Revert state on error
+  //     setFollow(follow);
+  //   }
+  // };
+
+   //STEP 2: dispactches action that reducer uses to update slice of state
+  // And uses a mutation to call the API to update the backend
+const handleFollow = async () => {
+    console.log("🔄 [USERCONTAINER] Follow button clicked! User:", userName, "ID:", id);
+    console.log("🔄 [USERCONTAINER] Current follow state:", isCurrentlyFollowed);
+    //console.log("🔄 [USERCONTAINER] followedUserIds array:", followedUserIds);
+    
+    try {
+      const wasFollowed = isCurrentlyFollowed;
+      
+      // Optimistically update Redux state
       if (wasFollowed) {
-        await unfollowUser({ id, username: userName }).unwrap();
+        dispatch(unfollowUserAction(id));
+        await unfollowUser({ username: userName }).unwrap();
       } else {
-        await followUser({ id, username: userName }).unwrap();
+        dispatch(followUserAction(id));
+        await followUser({ username: userName }).unwrap();
       }
     } catch (error) {
       console.error("Follow/unfollow error:", error);
       // Revert state on error
-      setFollow(follow);
+      if (isCurrentlyFollowed) {
+        dispatch(followUserAction(id));
+      } else {
+        dispatch(unfollowUserAction(id));
+      }
     }
   };
   const isMe = user.data?.userName === userName;
@@ -105,7 +139,7 @@ export default function PeopleContainer({
             style={{
               borderRadius: 999,
               borderWidth: 1,
-              backgroundColor: follow ? fbuttonBackgroundColor : "transparent",
+              backgroundColor: isCurrentlyFollowed ? fbuttonBackgroundColor : "transparent",
               overflow: "hidden",
               borderColor: fbuttonBackgroundColor,
             }}
@@ -118,11 +152,11 @@ export default function PeopleContainer({
               <Text
                 style={{
                   fontFamily: "jakara",
-                  color: !follow ? fBColor : nBColor,
+                  color: !isCurrentlyFollowed ? fBColor : nBColor,
                   includeFontPadding: false,
                 }}
               >
-                {follow ? "Following" : "Follow"}
+                {isCurrentlyFollowed ? "Following" : "Follow"}
               </Text>
             </Pressable>
           </View>
