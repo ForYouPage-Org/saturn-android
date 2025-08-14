@@ -23,7 +23,7 @@ const { width } = Dimensions.get("window");
 export default function PeopleContainer({
   name,
   userName,
-  id,
+  id, //this is the id of the user that our user is trying to follow
   imageUri,
   isFollowed,
 }: IPerson) {
@@ -75,10 +75,10 @@ const handleFollow = async () => {
       // Optimistically update Redux state
       if (wasFollowed) {
         dispatch(unfollowUserAction(id));
-        await unfollowUser({ id, username: userName }).unwrap();
+        await unfollowUser({ username: userName }).unwrap();
       } else {
         dispatch(followUserAction(id));
-        await followUser({ id, username: userName }).unwrap();
+        await followUser({ username: userName }).unwrap();
       }
     } catch (error) {
       console.error("Follow/unfollow error:", error);

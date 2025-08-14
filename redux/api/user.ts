@@ -15,20 +15,30 @@ interface loginResult {
   data: IUSerData;
 }
 
-//RAGHAVI ADDED: Data structures to define follow type and response 
+//RAGHAVI ADDED: Data structures to define follow type and response for get follow and following
 export interface Follow {
   id: string;
   username: string;
   preferredUsername: string;
   displayName?: string;
   iconUrl?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface FollowResponse {
   status: "success";
-  followers: Follow[];
+  followData: Follow[];
   hasMore: boolean;
 }
+
+//follow and unfollow
+export interface FollowActionResult {
+  status: "success";
+  message: string;
+  isFollowing: boolean;
+}
+
 export const userApi = createApi({
   reducerPath: "userApi",
   baseQuery: fetchBaseQuery({
@@ -158,104 +168,139 @@ export const userApi = createApi({
     //   query: ({ username }) => `/user/${username}/following`, // Keep this as fallback until backend implements
     //   providesTags: ["user"],
     // }),
+
     //RAGHAVI ADDED: updating API calls for getFollowing & getFollowers
+    //get followers list 
     getFollowersList: builder.query<FollowResponse, { username: string, page?: number; limit?: number }>({
-      query: ({ username, page = 1, limit = 20 } = {}) => {
-        console.log("🌐 [DEBUG] getFeed query called with:", { page, limit });
+      query: ({ username, page = 1, limit = 20 }) => {
+        console.log("🌐 [DEBUG] getFollowersList query called with:", { page, limit });
         console.log(
           "🌐 [DEBUG] API URL:",
           `${process.env.EXPO_PUBLIC_API_URL}/api`
         );
         return {
-          url: "/posts",
+          url: `/actors/${username}/followers`,
           method: "GET",
           params: { page, limit },
         };
       },
-      providesTags: ["Post"],
+      providesTags: ["user"],
+    }),
+
+    getFollowingList: builder.query<FollowResponse, { username: string, page?: number; limit?: number }>({
+      query: ({ username, page = 1, limit = 20 }) => {
+        console.log("🌐 [DEBUG] getFollowingList query called with:", { page, limit });
+        console.log(
+          "🌐 [DEBUG] API URL:",
+          `${process.env.EXPO_PUBLIC_API_URL}/api`
+        );
+        return {
+          url: `/actors/${username}/following`,
+          method: "GET",
+          params: { page, limit },
+        };
+      },
+      providesTags: ["user"],
     }),
     
-    
-    
-    
-    
-    
+    //RAGHAVI: CHANGE THIS!
+    //Create a new interface for follow/unfollow response
+    //Change API call to match POST's "post" call from posts.ts
+
       //STEP 2.2: API call to follow user and a dispatach to update state 
     // 🔧 MVP: Mock follow functionality (until backend implements follow endpoints)
-    followUser: builder.mutation<
-      { status: "success"; message: string },
-      { id: string; username: string }
-    >({
+    followUser: builder.mutation<FollowActionResult, {username: string}> ({
       query: ({ username }) => {
-        console.log("🔒 [API] Calling followUser with username:", username);
+        console.log("🌐 [DEBUG] followUser query called with:", { username });
+        console.log(
+          "🌐 [DEBUG] API URL:",
+          `${process.env.EXPO_PUBLIC_API_URL}/api`
+        );
         return {
           url: `/actors/${username}/follow`,
           method: "POST",
         };
       },
-      async onQueryStarted({ id, username }, { dispatch, queryFulfilled }) {
-    // Update both states optimistically
-    const patchResult = dispatch(
-      userApi.util.updateQueryData("getUser", null, (draft) => {
-        draft.following.push(id);
-      })
-    );
-    dispatch(followUserAction(id)); // ← Also update followers.ts
-    
-        try {
-          const result = await queryFulfilled;
-          console.log("✅ [API] Follow user successful:", username, result.data);
-          
-          // Fetch updated followers list after successful follow
-          try {
-            console.log("📋 [API] Calling getFollowersList with username:", username);
-            const followersListResult = await dispatch(userApi.endpoints.getFollowersList.initiate({ username }));
-            console.log("📋 [API] getFollowersList full result:", followersListResult);
-            console.log("📋 [API] getFollowersList data:", followersListResult.data);
-            console.log("📋 [API] getFollowersList error:", followersListResult.error);
-            console.log("📋 [API] getFollowersList isSuccess:", followersListResult.isSuccess);
-            console.log("📋 [API] getFollowersList isError:", followersListResult.isError);
-            console.log("📋 [API] Updated followers list after follow:", followersListResult.data);
-          } catch (followersError) {
-            console.error("❌ [API] Error fetching followers list:", followersError);
-          }
-
-        } catch (error) {
-          console.error("❌ [API] Follow user failed:", username, error);
-          patchResult.undo();
-        }
-      },
       invalidatesTags: ["guest", "user"],
     }),
+
+    //No longer needed 
+    //async onQueryStarted({ id, username }, { dispatch, queryFulfilled }) {
+    // // Update both states optimistically
+    // const patchResult = dispatch(
+    //   userApi.util.updateQueryData("getUser", null, (draft) => {
+    //     draft.following.push(id);
+    //   })
+    // );
+    // //dispatch(followUserAction(id)); // ← Also update followers.ts
+    
+    //     try {
+    //       const result = await queryFulfilled;
+    //       console.log("✅ [API] Follow user successful:", username, result.data);
+          
+    //       // Fetch updated followers list after successful follow
+    //       try {
+    //         console.log("📋 [API] Calling getFollowersList with username:", username);
+    //         const followersListResult = await dispatch(userApi.endpoints.getFollowersList.initiate({ username }));
+    //         console.log("📋 [API] getFollowersList full result:", followersListResult);
+    //         console.log("📋 [API] getFollowersList data:", followersListResult.data);
+    //         console.log("📋 [API] getFollowersList error:", followersListResult.error);
+    //         console.log("📋 [API] getFollowersList isSuccess:", followersListResult.isSuccess);
+    //         console.log("📋 [API] getFollowersList isError:", followersListResult.isError);
+    //         console.log("📋 [API] Updated followers list after follow:", followersListResult.data);
+    //       } catch (followersError) {
+    //         console.error("❌ [API] Error fetching followers list:", followersError);
+    //       }
+
+    //     } catch (error) {
+    //       console.error("❌ [API] Follow user failed:", username, error);
+    //       patchResult.undo();
+    //     }
+    //   },
+    //   invalidatesTags: ["guest", "user"],
     //followUser ends here
 
     // 🔧 MVP: Mock unfollow functionality (until backend implements follow endpoints)
-    unfollowUser: builder.mutation<
-      { status: "success"; message: string },
-      { id: string; username: string }
-    >({
+    // unfollowUser: builder.mutation<
+    //   { status: "success"; message: string },
+    //   { id: string; username: string }
+    // >({
+    //   query: ({ username }) => {
+    //     console.log("🔒 [API] Calling unfollowUser with username:", username);
+    //     return {
+    //       url: `/actors/${username}/follow`,
+    //       method: "DELETE",
+    //     };
+    //   },
+    //   async onQueryStarted({ id, username }, { dispatch, queryFulfilled }) {
+    // // Update both states optimistically
+    //   const patchResult = dispatch(
+    //   userApi.util.updateQueryData("getUser", null, (draft) => {
+    //     draft.following = draft.following.filter((userId) => userId !== id);
+    //   })
+    // );
+    // //dispatch(unfollowUserAction(id)); // ← Also update followers.ts
+    //     try {
+    //       const result = await queryFulfilled;
+    //       console.log("✅ [API] Unfollow user successful:", username, result.data);
+    //     } catch (error) {
+    //       console.error("❌ [API] Unfollow user failed:", username, error);
+    //       patchResult.undo();
+    //     }
+    //   },
+    //   invalidatesTags: ["guest", "user"],
+    // }),
+    unfollowUser: builder.mutation<FollowActionResult, {username: string}> ({
       query: ({ username }) => {
-        console.log("🔒 [API] Calling unfollowUser with username:", username);
+        console.log("🌐 [DEBUG] unfollowUser query called with:", { username });
+        console.log(
+          "🌐 [DEBUG] API URL:",
+          `${process.env.EXPO_PUBLIC_API_URL}/api`
+        );
         return {
           url: `/actors/${username}/follow`,
           method: "DELETE",
         };
-      },
-      async onQueryStarted({ id, username }, { dispatch, queryFulfilled }) {
-    // Update both states optimistically
-      const patchResult = dispatch(
-      userApi.util.updateQueryData("getUser", null, (draft) => {
-        draft.following = draft.following.filter((userId) => userId !== id);
-      })
-    );
-    dispatch(unfollowUserAction(id)); // ← Also update followers.ts
-        try {
-          const result = await queryFulfilled;
-          console.log("✅ [API] Unfollow user successful:", username, result.data);
-        } catch (error) {
-          console.error("❌ [API] Unfollow user failed:", username, error);
-          patchResult.undo();
-        }
       },
       invalidatesTags: ["guest", "user"],
     }),
